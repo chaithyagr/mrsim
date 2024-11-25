@@ -8,11 +8,14 @@ import numpy as np
 import dacite
 from dacite import Config
 
+from mrinufft._array_compat import with_torch
+
 from .. import blocks
 from .. import ops
 from . import base
 
 
+@with_torch
 def mprage(
     nshots,
     flip,
@@ -29,76 +32,115 @@ def mprage(
     """
     Simulate a Magnetization Prepared (MP) Rapid Gradient Echo sequence.
 
-    Args:
-        nshots (int): number of pulse in the Inversion block.
-        flip (float): Flip angle in [deg] of shape (,nmodes).
-        TR (float): Repetition time in [ms].
-        T1 (float, array-like): Longitudinal relaxation time in [ms].
-        T2 (float, array-like): Transverse relaxation time in [ms].
-        sliceprof (optional, bool or array-like): excitation slice profile (i.e., flip angle scaling across slice).
-            If False, pulse are non selective. If True, pulses are selective but ideal profile is assumed.
-            If array, flip angle scaling along slice is simulated. Defaults to False.
-        spoil_inc (optional, float): RF spoiling increment in [deg]. Defaults to 117°.
-        diff (optional, str, tuple[str]): Arguments to get the signal derivative with respect to.
-            Defaults to None (no differentation).
-        device (optional, str): Computational device. Defaults to "cpu".
-        TI (optional, float): Inversion time in [ms]. Defaults to None (no preparation).
+    Parameters
+    ----------
+    nshots : int
+        Number of pulses in the inversion block.
+    flip : float
+        Flip angle in degrees, of shape `(nmodes,)`.
+    TR : float
+        Repetition time in milliseconds.
+    T1 : float or ArrayLike
+        Longitudinal relaxation time in milliseconds.
+    T2 : float or ArrayLike
+        Transverse relaxation time in milliseconds.
+    sliceprof : bool or ArrayLike, optional
+        Excitation slice profile (i.e., flip angle scaling across the slice).
+        If `False`, pulses are non-selective.
+        If `True`, pulses are selective but assume an ideal profile.
+        If an array, simulates flip angle scaling along the slice. Defaults to `False`.
+    spoil_inc : float, optional
+        RF spoiling increment in degrees. Defaults to `117.0`.
+    diff : str, tuple of str, or None, optional
+        Arguments to compute the signal derivative with respect to. Defaults to `None` (no differentiation).
+    device : str, optional
+        Computational device. Defaults to `"cpu"`.
+    TI : float, optional
+        Inversion time in milliseconds. Defaults to `0.0`.
 
-    Kwargs (simulation):
-        nstates (optional, int): Maximum number of EPG states to be retained during simulation.
-            High numbers improve accuracy but decrease performance. Defaults to 10.
-        max_chunk_size (optional, int): Maximum number of atoms to be simulated in parallel.
-            High numbers increase speed and memory footprint. Defaults to natoms.
-        nlocs (optional, int): Maximum number of spatial locations to be simulated (i.e., for slice profile effects).
-            Defaults to 15 for slice selective and 1 for non-selective / ideal profile acquisitions.
-        verbose (optional, bool): If true, prints execution time for signal (and gradient) calculations.
+    Other Parameters
+    ----------------
+    simulation_kwargs : dict, optional
+        Additional keyword arguments for simulation:
 
-    Kwargs (sequence):
-        TE (optional, float): Echo time in [ms]. Defaults to 0.0.
-        B1sqrdTau (float): pulse energy in [uT**2 * ms].
+        - nstates : int, optional
+            Maximum number of EPG states to retain during simulation. Higher values improve accuracy but reduce performance. Defaults to `10`.
+        - max_chunk_size : int, optional
+            Maximum number of atoms to simulate in parallel. Larger values increase speed and memory usage. Defaults to `natoms`.
+        - nlocs : int, optional
+            Maximum number of spatial locations to simulate (e.g., for slice profile effects). Defaults to `15` for slice-selective acquisitions and `1` for non-selective acquisitions.
+        - verbose : bool, optional
+            If `True`, prints execution time for signal and gradient calculations.
 
-        global_inversion (bool): assume nonselective (True) or selective (False) inversion. Defaults to True.
-        inv_B1sqrdTau (float): inversion pulse energy in [uT**2 * ms].
+    sequence_kwargs : dict, optional
+        Additional keyword arguments for sequence settings:
 
-        grad_tau (float): gradient lobe duration in [ms].
-        grad_amplitude (optional, float): gradient amplitude along unbalanced direction in [mT / m].
-            If total_dephasing is not provided, this is used to compute diffusion and flow effects.
-        grad_dephasing (optional, float): Total gradient-induced dephasing across a voxel (in grad direction).
-            If gradient_amplitude is not provided, this is used to compute diffusion and flow effects.
+        - TE : float, optional
+            Echo time in milliseconds. Defaults to `0.0`.
+        - B1sqrdTau : float
+            Pulse energy in `uT**2 * ms`.
+        - global_inversion : bool
+            Assumes non-selective (`True`) or selective (`False`) inversion. Defaults to `True`.
+        - inv_B1sqrdTau : float
+            Inversion pulse energy in `uT**2 * ms`.
+        - grad_tau : float
+            Gradient lobe duration in milliseconds.
+        - grad_amplitude : float, optional
+            Gradient amplitude in the unbalanced direction, in `mT/m`. Used to compute diffusion and flow effects if `grad_dephasing` is not provided.
+        - grad_dephasing : float, optional
+            Total gradient-induced dephasing across a voxel in the gradient direction. Used if `grad_amplitude` is not provided.
+        - voxelsize : str or array-like, optional
+            Voxel size `(dx, dy, dz)` in millimeters. If scalar, assumes isotropic voxel size. Defaults to `None`.
+        - grad_orient : str or array-like, optional
+            Gradient orientation (`"x"`, `"y"`, `"z"`, or a vector). Defaults to `"z"`.
+        - slice_orient : str or array-like, optional
+            Slice orientation (`"x"`, `"y"`, `"z"`, or a vector). Ignored if pulses are non-selective. Defaults to `"z"`.
 
-        voxelsize (optional, str, array-like): voxel size (dx, dy, dz) in [mm]. If scalar, assume isotropic voxel.
-            Defaults to "None".
+    system_kwargs : dict, optional
+        Additional keyword arguments for system settings:
 
-        grad_orient (optional, str, array-like): gradient orientation ("x", "y", "z" or versor). Defaults to "z".
-        slice_orient (optionl, str, array-like): slice orientation ("x", "y", "z" or versor).
-            Ignored if pulses are non-selective. Defaults to "z".
+        - B1 : float or array-like, optional
+            Flip angle scaling factor (`1.0` corresponds to the nominal flip angle). Defaults to `None`.
+        - B0 : float or array-like, optional
+            Bulk off-resonance in Hertz. Defaults to `None`.
+        - B1Tx2 : float or array-like, optional
+            Flip angle scaling factor for the secondary RF mode (`1.0` corresponds to nominal flip angle). Defaults to `None`.
+        - B1phase : float or array-like, optional
+            B1 relative phase in degrees (`0.0` corresponds to nominal RF phase). Defaults to `None`.
 
-     Kwargs (System):
-         B1 (optional, float, array-like): flip angle scaling factor (1.0 := nominal flip angle).
-             Defaults to None (nominal flip angle).
-         B0 (optional, float, array-like): Bulk off-resonance in [Hz]. Defaults to None.
-         B1Tx2 (optional, Union[float, npt.NDArray[float], torch.FloatTensor]): flip angle scaling factor for secondary RF mode (1.0 := nominal flip angle). Defaults to None.
-         B1phase (optional, Union[float, npt.NDArray[float], torch.FloatTensor]): B1 relative phase in [deg]. (0.0 := nominal rf phase). Defaults to None.
+    main_pool_kwargs : dict, optional
+        Additional keyword arguments for the main pool:
 
-    Kwargs (Main pool):
-        T2star  (optional, float, array-like): effective relaxation time for main pool in [ms]. Defaults to None.
-        D  (optional, float, array-like): apparent diffusion coefficient in [um**2 / ms]. Defaults to None.
-        v  (optional, float, array-like): spin velocity [cm / s]. Defaults to None.
-        chemshift (optional, float): chemical shift for main pool in [Hz]. Defaults to None.
+        - T2star : float or array-like, optional
+            Effective relaxation time for the main pool in milliseconds. Defaults to `None`.
+        - D : float or array-like, optional
+            Apparent diffusion coefficient in `um**2/ms`. Defaults to `None`.
+        - v : float or array-like, optional
+            Spin velocity in `cm/s`. Defaults to `None`.
+        - chemshift : float, optional
+            Chemical shift for the main pool in Hertz. Defaults to `None`.
 
-    Kwargs (Bloch-McConnell):
-        T1bm (optional, float, array-like): longitudinal relaxation time for secondary pool in [ms]. Defaults to None.
-        T2bm (optional, float, array-like): transverse relaxation time for main secondary in [ms]. Defaults to None.
-        kbm (optional, float, array-like). Nondirectional exchange between main and secondary pool in [Hz]. Defaults to None.
-        weight_bm (optional, float, array-like): relative secondary pool fraction. Defaults to None.
-        chemshift_bm (optional, float): chemical shift for secondary pool in [Hz]. Defaults to None.
+    bloch_mcconnell_kwargs : dict, optional
+        Additional keyword arguments for Bloch-McConnell modeling:
 
-    Kwargs (Magnetization Transfer):
-        kmt (optional, float, array-like). Nondirectional exchange between free and bound pool in [Hz].
-            If secondary pool is defined, exchange is between secondary and bound pools (i.e., myelin water and macromolecular), otherwise
-            exchange is between main and bound pools. Defaults to None.
-        weight_mt (optional, float, array-like): relative bound pool fraction. Defaults to None.
+        - T1bm : float or array-like, optional
+            Longitudinal relaxation time for the secondary pool in milliseconds. Defaults to `None`.
+        - T2bm : float or array-like, optional
+            Transverse relaxation time for the secondary pool in milliseconds. Defaults to `None`.
+        - kbm : float or array-like, optional
+            Nondirectional exchange rate between the main and secondary pools, in Hertz. Defaults to `None`.
+        - weight_bm : float or array-like, optional
+            Relative fraction of the secondary pool. Defaults to `None`.
+        - chemshift_bm : float, optional
+            Chemical shift for the secondary pool in Hertz. Defaults to `None`.
 
+    magnetization_transfer_kwargs : dict, optional
+        Additional keyword arguments for magnetization transfer effects:
+
+        - kmt : float or array-like, optional
+            Nondirectional exchange rate between the free and bound pools, in Hertz. Defaults to `None`. If a secondary pool is defined, exchange is between secondary and bound pools (e.g., myelin water and macromolecular pools); otherwise, exchange is between the main and bound pools.
+        - weight_mt : float or array-like, optional
+            Relative fraction of the bound pool. Defaults to `None`.
     """
     # constructor
     init_params = {
@@ -123,12 +165,6 @@ def mprage(
         verbose = init_params["verbose"]
     else:
         verbose = False
-
-    # get verbosity
-    if "asnumpy" in init_params:
-        asnumpy = init_params["asnumpy"]
-    else:
-        asnumpy = True
 
     # get selectivity:
     if sliceprof:
@@ -226,11 +262,6 @@ def mprage(
         # actual simulation
         sig, dsig = simulator(flip=flip, TR=TR, TI=TI, TE=TE, props=props)
 
-        # post processing
-        if asnumpy:
-            sig = sig.detach().cpu().numpy()
-            dsig = dsig.detach().cpu().numpy()
-
         # prepare info
         info = {"trun": simulator.trun, "tgrad": simulator.tgrad}
         if verbose:
@@ -240,10 +271,6 @@ def mprage(
     else:
         # actual simulation
         sig = simulator(flip=flip, TR=TR, TI=TI, TE=TE, props=props)
-
-        # post processing
-        if asnumpy:
-            sig = sig.cpu().numpy()
 
         # prepare info
         info = {"trun": simulator.trun}
