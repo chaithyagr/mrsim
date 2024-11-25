@@ -30,7 +30,7 @@ def spgr(
     delta_cs: float | npt.ArrayLike = 0.0,
     diff: str | tuple[str] | None = None,
 ):  # noqa
-    r"""bSSFP transverse signal at time TE after excitation.
+    r"""SPGR transverse signal at time TE after excitation.
 
     Parameters
     ----------
