@@ -89,6 +89,7 @@ def _sort_signature(input, reference):
     out = {k: input[k] for k in reference if k in input}
     return list(out.values()), list(out.keys())
 
+
 class BaseSimulator:
     """
     Base class for Bloch simulators.
@@ -137,15 +138,14 @@ class BaseSimulator:
     -------
     set_callable_functions() :
         Sets the functions that will be used for simulation (fun, jac, etc).
-        
+
     """
+
     @staticmethod
-    def sequence(): # noqa
+    def sequence():  # noqa
         """Base method to be overridden to define new signal simulators."""
         ...
-        
-    
-        
+
     def __init__(
         self,
         nlocs: t.Optional[int] = 1,
@@ -167,21 +167,21 @@ class BaseSimulator:
         self.T2 = None
         self.B1 = None
         self.B0 = None
-        
+
         # Other main pool properties
         self.T2star = None
         self.D = None
         self.v = None
         self.moving = False
         self.chemshift = None
-        
+
         # Bloch-mcconnell parameters
         self.T1bm = None
         self.T2bm = None
         self.kbm = None
         self.weight_bm = None
         self.chemshift_bm = None
-        
+
         # Bloch-mt parameters
         self.kmt = None
         self.weight_mt = None
@@ -190,19 +190,19 @@ class BaseSimulator:
         self.B1Tx2 = None
         self.B1phase = None
         self.model = None
-        
+
         # Set default callable functions
         self.fun = None
         self.jac = None
         self._spin_params = None
         self._sequence_params = None
-        
+
     def initialize_spin_params(
         self,
         T1: float | torch.FloatTensor | npt.NDArray[float],
         T2: float | torch.FloatTensor | npt.NDArray[float],
         B1: t.Optional[float | torch.FloatTensor | npt.NDArray[float]] = None,
-        B0: t.Optional[float | torch.FloatTensor | npt.NDArray[float]] = None, 
+        B0: t.Optional[float | torch.FloatTensor | npt.NDArray[float]] = None,
         T2star: t.Optional[float | torch.FloatTensor | npt.NDArray[float]] = None,
         D: t.Optional[float | torch.FloatTensor | npt.NDArray[float]] = None,
         v: t.Optional[float | torch.FloatTensor | npt.NDArray[float]] = None,
@@ -216,11 +216,11 @@ class BaseSimulator:
         kmt: t.Optional[float | torch.FloatTensor | npt.NDArray[float]] = None,
         weight_mt: t.Optional[float | torch.FloatTensor | npt.NDArray[float]] = None,
         B1Tx2: t.Optional[float | torch.FloatTensor | npt.NDArray[float]] = None,
-        B1phase: t.Optional[float | torch.FloatTensor | npt.NDArray[float]] = None,        
+        B1phase: t.Optional[float | torch.FloatTensor | npt.NDArray[float]] = None,
     ):
         """
         Initialize all the properties that define the simulation parameters.
-        
+
         This is called separately after instantiating the simulator object.
         """
         self.T1 = T1
@@ -248,9 +248,9 @@ class BaseSimulator:
         self._initialize_fieldmap()
         self._initialize_chemshift()
         self._initialize_differentiation()
-                    
+
         self._get_sim_inputs()
-            
+
     def _cast(self, prop_dict):
         """Initialize properties and cast them to tensors."""
         props = {}
@@ -308,7 +308,7 @@ class BaseSimulator:
                 self.chemshift_bm = self.chemshift
             elif self.chemshift_bm is not None and self.chemshift is None:
                 self.chemshift = self.chemshift_bm
-                
+
     def _initialize_fieldmap(self):
         """Initialize the field maps."""
         if self.B0 is None:
@@ -342,7 +342,7 @@ class BaseSimulator:
             self.B1 = torch.cat(
                 (self.B1, self.B1Tx2 * torch.exp(1j * self.B1phase)), axis=-1
             )
-            
+
     def _initialize_differentiation(self):
         """Initialize the field maps."""
         if self.diff is None:
@@ -353,7 +353,7 @@ class BaseSimulator:
                 if fvalue.requires_grad is False:
                     fvalue.requires_grad = True
                     setattr(self, fname, fvalue)
-                 
+
     def _initialize_buffer(self):  # noqa
         """Initialize EPG matrix buffer."""
         # get sizes
@@ -420,7 +420,7 @@ class BaseSimulator:
             output = input[..., 0] + 1j * input[..., -1]
 
         return output
-        
+
     def _set_callable_functions(self):
         """
         Assign the `fun` and `jac` functions based on the toggle `use_sequence`.
@@ -450,7 +450,7 @@ class BaseSimulator:
         """
         return None
 
-    def _jac_tissue(self,  tissueparams=None, *seq_params):
+    def _jac_tissue(self, tissueparams=None, *seq_params):
         """
         Jacobian computation using tissue parameters.
         """
@@ -463,8 +463,11 @@ class BaseSimulator:
         """
         if self._spin_params is not None:
             return torch.cat(
-                [self._spin_params for k in self._spin_params.keys() if self._spin_params[k] is not None],
+                [
+                    self._spin_params
+                    for k in self._spin_params.keys()
+                    if self._spin_params[k] is not None
+                ],
                 dim=-1,
             )
         return None
-

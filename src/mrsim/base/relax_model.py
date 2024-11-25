@@ -9,6 +9,8 @@ __all__ = [
 
 import torch
 
+from .decorators import broadcast
+
 EPSILON = 1e-6
 
 
@@ -38,7 +40,9 @@ def _particle_conservation(k: torch.Tensor) -> torch.Tensor:
     return k
 
 
-def build_two_pool_exchange_matrix(weight: torch.Tensor, k: torch.Tensor) -> torch.Tensor:
+def build_two_pool_exchange_matrix(
+    weight: torch.Tensor, k: torch.Tensor
+) -> torch.Tensor:
     """
     Build the exchange matrix for Bloch-McConnell or MT model, ensuring particle conservation.
 
@@ -53,7 +57,7 @@ def build_two_pool_exchange_matrix(weight: torch.Tensor, k: torch.Tensor) -> tor
     -------
     torch.Tensor
         The exchange matrix.
-        
+
     """
     kab = k * weight[..., 1]  # kab: Exchange rate from pool a to pool b
     kba = k * weight[..., 0]  # kba: Exchange rate from pool b to pool a
@@ -72,8 +76,8 @@ def build_two_pool_exchange_matrix(weight: torch.Tensor, k: torch.Tensor) -> tor
 
 
 def build_three_pool_exchange_matrix(
-    weight: torch.Tensor, 
-    k1: torch.Tensor, 
+    weight: torch.Tensor,
+    k1: torch.Tensor,
     k2: torch.Tensor,
 ) -> torch.Tensor:
     """
@@ -92,17 +96,22 @@ def build_three_pool_exchange_matrix(
     -------
     torch.Tensor
         The exchange matrix.
-        
+
     """
     kab = k1 * weight[..., 1]  # kab: Exchange rate from pool a to pool b
     kba = k1 * weight[..., 0]  # kba: Exchange rate from pool b to pool a
     kbc = k2 * weight[..., 2]  # kbc: Exchange rate from pool b to pool c
     kcb = k2 * weight[..., 1]  # kbc: Exchange rate from pool c to pool b
 
-
-    row1 = torch.stack((-kab, kba, torch.zeros_like(k1)), dim=-1)  # Exchange from pool a to pool b
-    row2 = torch.stack((kab, -kba-kbc, kcb), dim=-1)  # Exchange from pool b to pool a, and from pool b to pool c
-    row3 = torch.stack((torch.zeros_like(k1), kbc, -kcb), dim=-1)  # Exchange from pool c to pool b
+    row1 = torch.stack(
+        (-kab, kba, torch.zeros_like(k1)), dim=-1
+    )  # Exchange from pool a to pool b
+    row2 = torch.stack(
+        (kab, -kba - kbc, kcb), dim=-1
+    )  # Exchange from pool b to pool a, and from pool b to pool c
+    row3 = torch.stack(
+        (torch.zeros_like(k1), kbc, -kcb), dim=-1
+    )  # Exchange from pool c to pool b
 
     # Stack exchange rates to create matrix
     exchange_matrix = torch.stack((row1, row2, row3), dim=-2)
@@ -113,6 +122,7 @@ def build_three_pool_exchange_matrix(
     return exchange_matrix
 
 
+@broadcast
 def prepare_single_pool(
     T1: torch.Tensor, T2: torch.Tensor
 ) -> tuple[torch.Tensor, torch.Tensor]:
@@ -136,9 +146,10 @@ def prepare_single_pool(
     R1 = 1.0 / (T1 + EPSILON)
     R2 = 1.0 / (T2 + EPSILON)
 
-    return R1, R2
+    return R1[..., None], R2[..., None]
 
 
+@broadcast
 def prepare_two_pool_bm(
     T1a: torch.Tensor,
     T1b: torch.Tensor,
@@ -186,13 +197,14 @@ def prepare_two_pool_bm(
     # Prepare weight tensor (pool a and pool b)
     weight_a = 1 - weight_b
     weight = torch.stack((weight_a, weight_b), dim=-1)
-    
+
     # Build the exchange matrix using the two pool model
     exchange_matrix = build_two_pool_exchange_matrix(weight, k)
 
     return R1, R2, exchange_matrix, weight
 
 
+@broadcast
 def prepare_two_pool_mt(
     T1a: torch.Tensor,
     T2a: torch.Tensor,
@@ -227,18 +239,19 @@ def prepare_two_pool_mt(
 
     # Stack relaxation rates
     R1 = torch.stack((R1a, R1a), dim=-1)
-    R2 = R2a
+    R2 = R2a[..., None]
 
     # Prepare weight tensor (pool a and pool b)
     weight_a = 1 - weight_b
     weight = torch.stack((weight_a, weight_b), dim=-1)
-    
+
     # Build the exchange matrix using the two pool model
     exchange_matrix = build_two_pool_exchange_matrix(weight, k)
 
     return R1, R2, exchange_matrix, weight
 
 
+@broadcast
 def prepare_three_pool(
     T1a: torch.Tensor,
     T1b: torch.Tensor,
@@ -276,7 +289,7 @@ def prepare_three_pool(
         - Transverse relaxation rate(s) for all pools (1/s).
         - Exchange matrix.
         - Weight tensor for all pools.
-        
+
     """
     # Convert relaxation times to rates (1/s)
     R1a = 1.0 / (T1a + EPSILON)
@@ -292,7 +305,7 @@ def prepare_three_pool(
     # Prepare weight tensor for all pools
     weight_a = 1 - weight_b - weight_c
     weight = torch.stack((weight_a, weight_b, weight_c), dim=-1)
-    
+
     # Build the exchange matrix using the two pool model
     exchange_matrix = build_three_pool_exchange_matrix(weight, k1, k2)
 

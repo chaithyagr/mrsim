@@ -1,14 +1,14 @@
-
 """Test base EPG sequence"""
 
 import torch
 
 from mrsim.epg.model import BaseSimulator
 
+
 # Test Case 1: Test Class Initialization with Default Parameters
 def test_initialization_default():
     simulator = BaseSimulator()
-    
+
     # Assert default values
     assert simulator.nstates == 10
     assert simulator.max_chunk_size is None
@@ -22,9 +22,9 @@ def test_initialization_default():
 
 
 # Test Case 2: Test Class Initialization with Custom Parameters
-def test_initialization_custom():    
+def test_initialization_custom():
     simulator = BaseSimulator(nstates=20, max_chunk_size=500, device="cuda")
-    
+
     # Assert custom values
     assert simulator.nstates == 20
     assert simulator.max_chunk_size == 500
@@ -34,7 +34,7 @@ def test_initialization_custom():
 # Test Case 3: Test callable functions initialization
 def test_callable_functions():
     simulator = BaseSimulator()
-    
+
     # Test the callable functions are set to None initially
     assert simulator.fun is None
     assert simulator.jac is None
@@ -68,6 +68,6 @@ def test_max_chunk_size():
 def test_device_assignment():
     simulator = BaseSimulator(device="cuda")
     assert simulator.device == "cuda"
-    
+
     simulator = BaseSimulator(device="cpu")
     assert simulator.device == "cpu"
