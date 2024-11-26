@@ -26,6 +26,16 @@ def test_build_two_pool_exchange_matrix():
     assert exchange_matrix.shape == (2, 2, 2)
 
 
+# Test consistency with Malik
+def test_directional_exchange():
+    k = build_two_pool_exchange_matrix(torch.tensor([0.8, 0.2]), 10.0)
+    ka = -k[0, 0]
+    tau_b = 1000.0 / k[0, 1]  # 1 / kb (ms)
+
+    assert ka == 2
+    assert tau_b == 125.0
+
+
 # Test for build_exchange_matrix_bm_mt
 def test_build_three_pool_exchange_matrix():
     weight_b = torch.tensor([0.2, 0.4], dtype=torch.float32)
