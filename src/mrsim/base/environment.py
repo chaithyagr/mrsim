@@ -5,8 +5,6 @@ __all__ = ["prepare_environmental_parameters"]
 import math
 import torch
 
-from .decorators import broadcast
-
 EPSILON = 1e-6  # To avoid division by zero or undefined values
 
 
@@ -49,11 +47,10 @@ def prepare_environmental_parameters(
     # Handle B0 in Hz and convert to rad/s
     B0_rad = 2 * math.pi * B0 if B0 is not None else torch.zeros_like(T2)
 
-    return _ret(R2_prime, B0_rad)
+    return R2_prime, B0_rad
 
 
 # %% local utils
-@broadcast
 def _prepare_R2_prime(T2, T2_star):
     if torch.any(T2_star >= T2):
         raise ValueError("T2* must be less than T2.")
@@ -65,8 +62,3 @@ def _prepare_R2_prime(T2, T2_star):
     R2_prime = 1.0 / (T2_star + EPSILON) - R2
 
     return R2_prime
-
-
-@broadcast
-def _ret(R2_prime, B0_rad):
-    return R2_prime, B0_rad

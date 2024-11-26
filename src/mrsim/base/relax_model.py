@@ -9,8 +9,6 @@ __all__ = [
 
 import torch
 
-from .decorators import broadcast
-
 EPSILON = 1e-6
 
 
@@ -122,7 +120,6 @@ def build_three_pool_exchange_matrix(
     return exchange_matrix
 
 
-@broadcast
 def prepare_single_pool(
     T1: torch.Tensor, T2: torch.Tensor
 ) -> tuple[torch.Tensor, torch.Tensor]:
@@ -149,7 +146,6 @@ def prepare_single_pool(
     return R1[..., None], R2[..., None]
 
 
-@broadcast
 def prepare_two_pool_bm(
     T1a: torch.Tensor,
     T1b: torch.Tensor,
@@ -204,7 +200,6 @@ def prepare_two_pool_bm(
     return R1, R2, exchange_matrix, weight
 
 
-@broadcast
 def prepare_two_pool_mt(
     T1a: torch.Tensor,
     T2a: torch.Tensor,
@@ -251,7 +246,6 @@ def prepare_two_pool_mt(
     return R1, R2, exchange_matrix, weight
 
 
-@broadcast
 def prepare_three_pool(
     T1a: torch.Tensor,
     T1b: torch.Tensor,
