@@ -27,6 +27,9 @@ def autocast(func: Callable) -> Callable:
         # convert remaining objects to torc
         args, kwargs = _to_tensors(*args, **kwargs)
 
+        # enforce float32 for floating point tensors
+        args, kwargs = _enforce_precision(*args, **kwargs)
+
         # get device from first positional or keyworded argument
         leading_arg = _get_leading_argument(args, kwargs)
 
@@ -67,6 +70,21 @@ def _fill_kwargs(func, args, kwargs):
     _values = list(_kwargs.values())[n_args:]
 
     return args, dict(zip(_keys, _values))
+
+
+def _enforce_precision(*args, **kwargs):
+    """Enforce tensors precision."""
+    args = list(args)
+    for n in range(len(args)):
+        if isinstance(args[n], torch.Tensor) and torch.is_floating_point(args[n]):
+            args[n] = args[n].to(torch.float32)
+
+    # convert keyworded
+    if kwargs:
+        process_kwargs_vals, _ = _to_tensors(*kwargs.values())
+        kwargs = {k: v for k, v in zip(kwargs.keys(), process_kwargs_vals)}
+
+    return args, kwargs
 
 
 def _to_tensors(*args, **kwargs):
