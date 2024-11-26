@@ -60,7 +60,9 @@ def _split_real_imag(tensor: torch.Tensor) -> torch.Tensor:
 
 def _combine_real_imag(split_tensor: torch.Tensor) -> torch.Tensor:
     """Combine split real and imaginary components into a complex tensor."""
-    output = torch.complex(split_tensor[0], split_tensor[1])
-    if torch.isreal(output).all().item():
-        return output.real
+    if isinstance(split_tensor, tuple):
+        output = [tensor[..., 0, :] + 1j * tensor[..., 1, :] for tensor in split_tensor]
+        output = torch.stack(output, dim=0)
+    else:
+        output = split_tensor[..., 0, :] + 1j * split_tensor[..., 1, :]
     return output

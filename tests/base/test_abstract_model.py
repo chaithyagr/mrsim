@@ -8,13 +8,13 @@ from mrsim.base import AbstractModel  # Update with actual path
 # Mock subclass of AbstractModel for testing purposes
 class MyModel(AbstractModel):
     def set_properties(self, param):
-        pass
+        self.properties.param = param
 
-    def set_sequence(self, *args, **kwargs):
+    def set_sequence(self):
         pass
 
     @staticmethod
-    def _engine(param, *args, **kwargs):
+    def _engine(param):
         return torch.tensor([1.0, 2.0, 3.0])
 
 
@@ -24,9 +24,8 @@ def test_initialization():
 
     assert model.chunk_size == 10
     assert model.device == "cuda"
-    assert model.dtype == torch.float32
     assert model.diff == "param"
-    assert model.broadcastable_params == set(["param"])
+    assert model.broadcastable_params == ["param"]
 
 
 # Test forward function
@@ -54,8 +53,10 @@ def test_jacobian():
 # Test __call__ method
 def test_call():
     model = MyModel(chunk_size=10, diff="param")
+    model.set_properties(torch.tensor([1.0]))
+    print(model.properties)
 
-    output, jacobian_output = model(torch.tensor([1.0]))
+    output, jacobian_output = model()
 
     # Test that the __call__ method returns both outputs
     assert isinstance(output, torch.Tensor)

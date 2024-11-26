@@ -7,9 +7,9 @@ import inspect
 from functools import wraps
 from typing import Callable
 
-from mrinufft._array_compat import _to_torch, _get_leading_argument, _get_device
+import torch
 
-# from ._broadcast import broadcast_arguments
+from mrinufft._array_compat import _to_torch, _get_leading_argument, _get_device
 
 
 def autocast(func: Callable) -> Callable:
@@ -21,8 +21,11 @@ def autocast(func: Callable) -> Callable:
     def wrapper(*args, **kwargs):
         args, kwargs = _fill_kwargs(func, args, kwargs)
 
-        # convert everything to torch
+        # convert arrays to torch
         args, kwargs = _to_torch(*args, **kwargs)
+
+        # convert remaining objects to torc
+        args, kwargs = _to_tensors(*args, **kwargs)
 
         # get device from first positional or keyworded argument
         leading_arg = _get_leading_argument(args, kwargs)
@@ -64,6 +67,23 @@ def _fill_kwargs(func, args, kwargs):
     _values = list(_kwargs.values())[n_args:]
 
     return args, dict(zip(_keys, _values))
+
+
+def _to_tensors(*args, **kwargs):
+    """Enforce tensors."""
+    args = list(args)
+    for n in range(len(args)):
+        try:
+            args[n] = torch.as_tensor(args[n])
+        except Exception:
+            pass
+
+    # convert keyworded
+    if kwargs:
+        process_kwargs_vals, _ = _to_tensors(*kwargs.values())
+        kwargs = {k: v for k, v in zip(kwargs.keys(), process_kwargs_vals)}
+
+    return args, kwargs
 
 
 def _to_device(device, *args, **kwargs):

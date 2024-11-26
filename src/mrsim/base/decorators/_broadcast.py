@@ -22,7 +22,9 @@ def broadcast(func: Callable) -> Callable:
 
         # run function
         output = func(*args)
-        return output.reshape(*shape, *output.shape[1:])
+        if torch.isreal(output).all():
+            output = output.real
+        return output.reshape(*shape, *output.shape[1:]).squeeze()
 
     return wrapper
 
@@ -35,6 +37,8 @@ def broadcast_arguments(*args, **kwargs) -> tuple[list, dict]:
     args = list(args)
 
     items, kwitems, indexes, keys = _get_tensor_args_kwargs(*args, **kwargs)
+    items = [torch.atleast_1d(item) for item in items]
+    kwitems = {k: torch.atleast_1d(v) for k, v in kwitems.items()}
     tmp = torch.broadcast_tensors(*items, *list(kwitems.values()))
     tmp = list(tmp)
     for n in range(len(items)):

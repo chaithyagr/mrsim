@@ -7,6 +7,7 @@ import functools
 
 from abc import ABC, abstractmethod
 from typing import Any, Callable
+from types import SimpleNamespace
 
 import torch
 
@@ -18,9 +19,9 @@ class AbstractModel(ABC):
 
     def __init__(
         self,
-        chunk_size: int,
-        device: str | torch.device | None = None,
         diff: str | tuple[str] | None = None,
+        chunk_size: int | None = None,
+        device: str | torch.device | None = None,
         *args,
         **kwargs,
     ):
@@ -29,22 +30,24 @@ class AbstractModel(ABC):
 
         Parameters
         ----------
-        chunk_size : int
-            Number of samples to process in parallel.
-        device : str | torch.device | None
-            Device for computations (e.g., 'cpu', 'cuda').
-        diff : str | tuple[str] | None
+        diff : str | tuple[str] | None, optional
             Parameters to compute the jacobian with respect to.
+        device : str | torch.device | None, optional
+            Device for computations (e.g., 'cpu', 'cuda').
+        chunk_size : int | None, optional
+            Number of samples to process in parallel.
+
         """
         self.chunk_size = chunk_size
         self.device = device if device is not None else torch.device("cpu")
-        self.dtype = torch.float32
         self.diff = diff
 
         # Extract broadcastable parameters
-        self.broadcastable_params = set(
+        self.broadcastable_params = list(
             inspect.signature(self.set_properties).parameters.keys()
         )
+        self.properties = SimpleNamespace()
+        self.sequence = SimpleNamespace()
 
     @autocast
     @abstractmethod
@@ -102,11 +105,12 @@ class AbstractModel(ABC):
         signature = inspect.signature(_func)
 
         # Extract default values for all parameters
-        default_args = {
-            k: v.default
-            for k, v in signature.parameters.items()
-            if v.default is not inspect.Parameter.empty
-        }
+        default_args = {}
+        for k, v in signature.parameters.items():
+            if v.default is not inspect.Parameter.empty:
+                default_args[k] = v.default
+            else:
+                default_args[k] = None
 
         # Merge default values and user-provided keyword arguments
         merged_kwargs = {**default_args, **kwargs}
@@ -117,9 +121,9 @@ class AbstractModel(ABC):
             merged_kwargs[parameter_names[idx]] = arg
 
         # Split into broadcastable and non-broadcastable
-        broadcastable_args = {
-            k: v for k, v in merged_kwargs.items() if k in self.broadcastable_params
-        }
+        # broadcastable_args = {
+        #     k: v for k, v in merged_kwargs.items() if k in self.broadcastable_params
+        # }
         non_broadcastable_args = {
             k: v for k, v in merged_kwargs.items() if k not in self.broadcastable_params
         }
@@ -127,7 +131,7 @@ class AbstractModel(ABC):
         # Define a new engine that takes only broadcastable parameters explicitly
         def func(*args):
             # Map provided positional arguments to broadcastable parameter names
-            broadcastable_mapping = dict(zip(broadcastable_args.keys(), args))
+            broadcastable_mapping = dict(zip(self.broadcastable_params, args))
             # Merge broadcastable and non-broadcastable parameters
             combined_args = {**broadcastable_mapping, **non_broadcastable_args}
             # Call the original engine
@@ -135,11 +139,11 @@ class AbstractModel(ABC):
 
         # Get argnums for diff
         if self.diff is not None:
-            argnums = _get_argnums(self.diff, broadcastable_args)
+            argnums = _get_argnums(self.diff, self.broadcastable_params)
         else:
             argnums = None
 
-        return func, list(broadcastable_args.values()), argnums
+        return func, argnums
 
     def forward(self, *args, **kwargs):
         """
@@ -156,15 +160,16 @@ class AbstractModel(ABC):
         -------
         callable
             A function that evaluates the forward model with the specified arguments.
+
         """
-        engine, broadcastable_args, _ = self._get_func(self._engine, *args, **kwargs)
+        engine, _ = self._get_func(self._engine, *args, **kwargs)
 
         def vmapped_engine(*inputs):
             vmapped = torch.vmap(engine, chunk_size=self.chunk_size)
             broadcast_vmapped = broadcast(vmapped)
             return broadcast_vmapped(*inputs)
 
-        return functools.partial(vmapped_engine, *broadcastable_args)
+        return vmapped_engine
 
     def jacobian(self, *args, **kwargs):
         """
@@ -181,13 +186,12 @@ class AbstractModel(ABC):
         -------
         callable
             A function that computes the Jacobian with respect to specified arguments.
+
         """
         if self.diff is None:
             return None
         if _is_implemented(self._jacobian_engine):
-            jac_engine, broadcastable_args, argnums = self._get_func(
-                self._jacobian_engine, *args, **kwargs
-            )
+            jac_engine, argnums = self._get_func(self._jacobian_engine, *args, **kwargs)
 
             def jacobian_engine(*inputs):
                 vmapped_jac = torch.vmap(jac_engine, chunk_size=self.chunk_size)
@@ -195,9 +199,7 @@ class AbstractModel(ABC):
                 return broadcast_vmapped_jac(*inputs)
 
         else:
-            engine, broadcastable_args, argnums = self._get_func(
-                self._engine, *args, **kwargs
-            )
+            engine, argnums = self._get_func(self._engine, *args, **kwargs)
 
             def jacobian_engine(*inputs):
                 jac_engine = jacfwd(argnums=argnums)(engine)
@@ -205,35 +207,38 @@ class AbstractModel(ABC):
                 broadcast_vmapped_jac = broadcast(vmapped_jac)
                 return broadcast_vmapped_jac(*inputs)
 
-        return functools.partial(jacobian_engine, *broadcastable_args)
+        return jacobian_engine
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self):
         """
         Calls both forward and jacobian methods, returning output and jacobian for sequence optimization.
-
-        Parameters
-        ----------
-        *args : Any
-            Positional arguments for the simulation.
-        **kwargs : Any
-            Keyword arguments for the simulation.
 
         Returns
         -------
         tuple
             A tuple containing the forward output and jacobian output.
+
         """
-        forward_fn = self.forward(*args, **kwargs)
+        kwargs = {**vars(self.properties), **vars(self.sequence)}
+
+        broadcastable_kwargs = {
+            k: v for k, v in kwargs.items() if k in self.broadcastable_params
+        }
+        non_broadcastable_kwargs = {
+            k: v for k, v in kwargs.items() if k not in self.broadcastable_params
+        }
+
+        forward_fn = self.forward(**non_broadcastable_kwargs)
 
         if self.diff is None:
             with torch.no_grad():
-                output = forward_fn(*args, **kwargs)
+                output = forward_fn(*broadcastable_kwargs.values())
             return output
 
-        output = forward_fn(*args, **kwargs)
+        output = forward_fn(*broadcastable_kwargs.values())
 
-        jacobian_fn = self.jacobian(*args, **kwargs)
-        jacobian_output = jacobian_fn(*args, **kwargs)
+        jacobian_fn = self.jacobian(**non_broadcastable_kwargs)
+        jacobian_output = jacobian_fn(*broadcastable_kwargs.values())
 
         return output, jacobian_output
 
