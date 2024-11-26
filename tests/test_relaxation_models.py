@@ -1,5 +1,4 @@
-"""
-"""
+"""Test relaxation model pre-processing"""
 
 import torch
 from torch.testing import assert_close
