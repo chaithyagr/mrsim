@@ -1,19 +1,19 @@
 """
 """
 
-__all__ = ["broadcast"]
+__all__ = ["autocast"]
 
 import inspect
 
 from functools import wraps
 from typing import Callable
 
-import torch
-
 from mrinufft._array_compat import _to_torch, _get_leading_argument, _get_device
 
+from ._broadcast import broadcast_arguments
 
-def broadcast(func: Callable) -> Callable:
+
+def autocast(func: Callable) -> Callable:
     """
     Force all inputs to be torch tensors of the same size on the same device.
     """
@@ -25,10 +25,6 @@ def broadcast(func: Callable) -> Callable:
         # convert everything to torch
         args, kwargs = _to_torch(*args, **kwargs)
 
-        # force everything to be at least 1d
-        args = [torch.atleast_1d(arg) for arg in args]
-        kwargs = {key: torch.atleast_1d(value) for key, value in kwargs.items()}
-
         # get device from first positional or keyworded argument
         leading_arg = _get_leading_argument(args, kwargs)
 
@@ -36,21 +32,10 @@ def broadcast(func: Callable) -> Callable:
         device = _get_device(leading_arg)
 
         # move everything to the leading argument device
-        args = [arg.to(device) for arg in args]
-        kwargs = {key: value.to(device) for key, value in kwargs.items()}
+        args, kwargs = _to_device(device, *args, **kwargs)
 
         # broadcast
-        kwargs_args = list(kwargs.values())
-        items = torch.broadcast_tensors(*args, *kwargs_args)
-        items = list(items)
-
-        # replace positional
-        for n in range(len(args)):
-            args[n] = items[0]
-            items.pop(0)
-
-        # replace kwargs
-        kwargs = dict(zip(list(kwargs.keys()), items))
+        args, kwargs = broadcast_arguments(*args, **kwargs)
 
         # run function
         return func(*args, **kwargs)
@@ -58,6 +43,7 @@ def broadcast(func: Callable) -> Callable:
     return wrapper
 
 
+# %% subroutines
 def _fill_kwargs(func, args, kwargs):
     """This automatically fills missing kwargs with default values."""
     signature = inspect.signature(func)
@@ -82,3 +68,19 @@ def _fill_kwargs(func, args, kwargs):
     _values = list(_kwargs.values())[n_args:]
 
     return args, dict(zip(_keys, _values))
+
+
+def _to_device(device, *args, **kwargs):
+    """Enforce same device."""
+    for arg in args:
+        try:
+            arg = arg.to(device)
+        except Exception:
+            pass
+
+    # convert keyworded
+    if kwargs:
+        process_kwargs_vals, _ = _to_device(device, *kwargs.values())
+        kwargs = {k: v for k, v in zip(kwargs.keys(), process_kwargs_vals)}
+
+    return args, kwargs

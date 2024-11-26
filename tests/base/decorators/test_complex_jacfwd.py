@@ -4,7 +4,7 @@
 import pytest
 import torch
 
-from mrsim.base.decorators import jacfwd
+from mrsim.base import jacfwd
 
 
 @jacfwd(argnums=0)

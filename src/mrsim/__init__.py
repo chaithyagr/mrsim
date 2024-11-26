@@ -2,6 +2,7 @@
 
 __all__ = []
 
+from . import base  # noqa
 from . import epg  # noqa
 
 from ._models import bssfp, spgr  # noqa
