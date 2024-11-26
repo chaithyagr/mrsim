@@ -4,7 +4,7 @@ import pytest
 import torch
 from torch.testing import assert_close
 
-from mrsim.base.environment import prepare_environmental_parameters
+from mrsim.base.config.environment import prepare_environmental_parameters
 
 EPSILON = 1e-6
 

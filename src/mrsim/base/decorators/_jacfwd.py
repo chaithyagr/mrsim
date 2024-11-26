@@ -1,13 +1,15 @@
 """
 """
 
+__all__ = ["jacfwd"]
+
 from functools import wraps
 
 from typing import Callable, Optional
 import torch
 
 
-def complex_jacfwd(argnums: int = 0, recombine_output: bool = True) -> Callable:
+def jacfwd(argnums: int = 0, recombine_output: bool = True) -> Callable:
     """
     Decorator to compute the Jacobian of a function with complex-valued outputs.
 

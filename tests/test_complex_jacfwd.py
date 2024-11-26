@@ -4,10 +4,10 @@
 import pytest
 import torch
 
-from mrsim.base.complex_jacfwd import complex_jacfwd
+from mrsim.base.decorators import jacfwd
 
 
-@complex_jacfwd(argnums=0)
+@jacfwd(argnums=0)
 def my_function(x: torch.Tensor) -> torch.Tensor:
     """
     Test function to validate complex_jacfwd behavior.
