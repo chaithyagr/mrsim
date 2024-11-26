@@ -1,5 +1,4 @@
-"""
-"""
+"""Automatic torch converter."""
 
 __all__ = ["autocast"]
 
@@ -10,7 +9,7 @@ from typing import Callable
 
 from mrinufft._array_compat import _to_torch, _get_leading_argument, _get_device
 
-from ._broadcast import broadcast_arguments
+# from ._broadcast import broadcast_arguments
 
 
 def autocast(func: Callable) -> Callable:
@@ -33,9 +32,6 @@ def autocast(func: Callable) -> Callable:
 
         # move everything to the leading argument device
         args, kwargs = _to_device(device, *args, **kwargs)
-
-        # broadcast
-        args, kwargs = broadcast_arguments(*args, **kwargs)
 
         # run function
         return func(*args, **kwargs)

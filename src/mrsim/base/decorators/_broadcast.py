@@ -1,17 +1,42 @@
-"""
-"""
+"""Automatic broadcasting"""
 
-__all__ = ["broadcast_arguments"]
+__all__ = ["broadcast", "broadcast_arguments"]
 
 import torch
+
+from functools import wraps
+from typing import Callable
+
+
+def broadcast(func: Callable) -> Callable:
+    """
+    Force all inputs to be torch tensors of the same size on the same device.
+    """
+
+    @wraps(func)
+    def wrapper(*args):
+        shape = _find_first_nonscalar_shape(args)
+
+        # broadcast
+        args, _ = broadcast_arguments(*args)
+
+        # run function
+        output = func(*args)
+        return output.reshape(*shape, *output.shape[1:])
+
+    return wrapper
 
 
 def broadcast_arguments(*args, **kwargs) -> tuple[list, dict]:
     """
     Force all inputs to be torch tensors of the same size.
     """
+    # enforge mutable
+    args = list(args)
+
     items, kwitems, indexes, keys = _get_tensor_args_kwargs(*args, **kwargs)
     tmp = torch.broadcast_tensors(*items, *list(kwitems.values()))
+    tmp = list(tmp)
     for n in range(len(items)):
         items[n] = tmp[0]
         tmp.pop(0)
@@ -26,6 +51,15 @@ def broadcast_arguments(*args, **kwargs) -> tuple[list, dict]:
 
 
 # %% subroutines
+def _find_first_nonscalar_shape(batched_args):  # noqa
+    """Returns shape of first non-scalar tensor."""
+    shape = [1]
+    for arg in batched_args:
+        if arg.ndim != 0:
+            return arg.shape
+    return shape
+
+
 def _get_tensor_args_kwargs(*args, **kwargs):
     items = []
     kwitems = {}
