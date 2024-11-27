@@ -43,6 +43,6 @@ def states_matrix(
     """
     Fplus = torch.zeros((nstates, nlocs, ntrans_pools), dtype=dtype, device=device)
     Fminus = torch.zeros((nstates, nlocs, ntrans_pools), dtype=dtype, device=device)
-    Z = torch.ones((nstates, nlocs, ntrans_pools), dtype=dtype, device=device)
+    Z = torch.ones((nstates, nlocs, nlong_pools), dtype=dtype, device=device)
 
     return SimpleNamespace(Fplus=Fplus, Fminus=Fminus, Z=Z)
