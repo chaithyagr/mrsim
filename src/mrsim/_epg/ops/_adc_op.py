@@ -23,7 +23,7 @@ def observe(states, phi=None):
 
     """
     # parse
-    F = states["F"]  # (nstates, nlocs, npools, 3)
+    F = states["F"]  # (nstates, nlocs, npools, 2)
 
     # get transverse magnetization
     mxy = F[0, ..., 0]  # (nlocs, npools)
