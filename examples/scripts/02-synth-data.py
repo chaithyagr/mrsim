@@ -46,7 +46,7 @@ T2w = sample_subject.T2.numpy().astype(np.float32).squeeze()[:, :, 60].T
 sa = np.sin(np.deg2rad(8.0))
 ta = np.tan(np.deg2rad(8.0))
 
-T2 = -1000.0 / 92 / np.log(T2w/M0)
+T2 = -92.0 / np.log(T2w/M0)
 T2 = np.nan_to_num(T2, neginf=0.0, posinf=0.0)
 T2 = np.clip(T2, a_min=0.0, a_max=np.inf)
 
@@ -73,7 +73,7 @@ def simulate(T2, flip, ESP, phases=None, device="cpu"):
 #
 # Assume a constant refocusing train
 flip = 180.0 * np.ones(32, dtype=np.float32)
-ESP = 1.0
+ESP = 5.0
 device="cpu"
 
 # simulate acquisition
