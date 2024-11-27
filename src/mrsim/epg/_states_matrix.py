@@ -8,7 +8,6 @@ import torch
 
 
 def states_matrix(
-    dtype: torch.dtype,
     device: torch.device,
     nstates: int,
     nlocs: int = 1,
@@ -41,9 +40,9 @@ def states_matrix(
             * Z: longitudinal Z states of shape (nstates, nlocs, nlong_pools)
 
     """
-    Fplus = torch.zeros((nstates, nlocs, ntrans_pools), dtype=dtype, device=device)
-    Fminus = torch.zeros((nstates, nlocs, ntrans_pools), dtype=dtype, device=device)
-    Z = torch.zeros((nstates, nlocs, nlong_pools), dtype=dtype, device=device)
+    Fplus = torch.zeros((nstates, nlocs, ntrans_pools), dtype=torch.complex64, device=device)
+    Fminus = torch.zeros((nstates, nlocs, ntrans_pools), dtype=torch.complex64, device=device)
+    Z = torch.zeros((nstates, nlocs, nlong_pools), dtype=torch.complex64, device=device)
     Z[0] = 1.0
 
     return SimpleNamespace(Fplus=Fplus, Fminus=Fminus, Z=Z)

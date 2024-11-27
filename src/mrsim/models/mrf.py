@@ -66,7 +66,6 @@ class MRFModel(AbstractModel):
         # Prepare EPG states matrix
         states = epg.states_matrix(
             device=R1.device,
-            dtype=torch.float32,
             nlocs=slice_prof.numel(),
             nstates=nstates,
         )

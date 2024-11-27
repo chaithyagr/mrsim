@@ -39,10 +39,10 @@ def rf_pulse_op(
     # calculate operator
     T00 = torch.cos(fa / 2) ** 2
     T01 = torch.sin(fa / 2) ** 2
-    T02 = torch.sin(fa)
+    T02 = -1j * torch.sin(fa)
     T10 = T01.conj()
     T11 = T00
-    T12 = torch.sin(fa)
+    T12 = 1j * torch.sin(fa)
     T20 = -0.5 * 1j * torch.sin(fa)
     T21 = 0.5 * 1j * torch.sin(fa)
     T22 = torch.cos(fa)
@@ -89,7 +89,8 @@ def phased_rf_pulse_op(
     """
     # apply B1 effect
     fa = B1 * fa
-
+    phi = B1phase + phi
+    
     # apply slice profile
     fa = slice_prof * fa
 
