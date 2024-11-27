@@ -1,36 +1,77 @@
 """
-Validation of derivatives
+=========================
+Automatic differentiation
+=========================
+
+This example showcase the automatic differentiation capabilities
+of the framework.
+
+First, we will import the required packages:
+    
 """
 from functools import partial
 
 import numpy as np
 import torch
 
-from torch.func import jacrev, vmap
-
-import epgtorchx as epgx
-from epgtorchx import optim
+from torch.func import jacrev
 
 import matplotlib.pyplot as plt
 import time
 
-#%% local utils
-fse_grad = epgx.fse
+# %%
+#
+# We will show how to use automatic differentiation
+# to automatically compute Cramer Rao Lower Bound.
+#
+# This can be used as a cost function to optimize acquisition schedules,
+# for example for quantitative MRI
+#
+# We'll focuse on a simple Fast Spin Echo acquisition:
 
-def fse_finitediff_grad(flip, phases, ESP, T1, T2, asnumpy=True):
-    
-    # run
-    sig = epgx.fse(flip, phases, ESP, T1, T2, asnumpy=asnumpy)
+# get simulator
+from epgtorchx import fse
 
-    # numerical derivative
-    dt = 1.0
-    dsig = epgx.fse(flip, phases, ESP, T1, T2+dt, asnumpy=asnumpy)
-    
-    return sig, (dsig - sig) / dt
+# %%
+#
+# Cramer Rao Lower Bound is defined as the diagonal of the inverse
+# of Fisher information matrix. This can be computed as
 
-def crlb_cost(flip, ESP, T1, T2):
+def calculate_crlb(grad, W=None, weight=1.0):
+    if len(grad.shape) == 1:
+        grad = grad[None, :]
+        
+    if W is None:
+        W = torch.eye(grad.shape[0], dtype=grad.dtype, device=grad.device)
+        
+    J = torch.stack((grad.real, grad.imag), axis=0) # (nparams, nechoes)
+    J = J.permute(2, 1, 0)
     
-    # to tensor
+    # calculate Fischer information matrix
+    In = torch.einsum("bij,bjk->bik", J, J.permute(0, 2, 1))
+    I = In.sum(axis=0) # (nparams, nparams)
+
+    # Invert
+    return torch.trace(torch.linalg.inv(I) * W).real * weight
+
+# %%
+#
+# notice that we used the trace as a cost function. 
+# For optimization, we need the gradient of this cost
+# wrt sequence parameters. 
+#
+# This can be obtained as:
+
+def _crlb_cost(ESP, T1, T2, phases, flip):
+    
+    # calculate signal and derivative
+    _, grad = fse(flip, phases, ESP, T1, T2, diff=["T2"], asnumpy=False)
+    
+    # calculate cost
+    return calculate_crlb(grad)
+
+
+def crlb_cost(flip, ESP, T1, T2):    
     flip = torch.as_tensor(flip, dtype=torch.float32)
     flip.requires_grad = True
     
@@ -42,14 +83,21 @@ def crlb_cost(flip, ESP, T1, T2):
     _dcost = jacrev(_cost)
     
     return _cost(flip).detach().cpu().numpy(), _dcost(flip).detach().cpu().numpy()
- 
-def _crlb_cost(ESP, T1, T2, phases, flip):
+
+# %%
+#
+# As reference, we compute derivatives via finite differences
+# approximation. This is inaccurate, but as easy to implement
+# as automatic differentiationç
+
+def fse_finitediff_grad(flip, phases, ESP, T1, T2, asnumpy=True):    
+    sig = fse(flip, phases, ESP, T1, T2, asnumpy=asnumpy)
+
+    # numerical derivative
+    dt = 1.0
+    dsig = fse(flip, phases, ESP, T1, T2+dt, asnumpy=asnumpy)
     
-    # calculate signal and derivative
-    _, grad = epgx.fse(flip, phases, ESP, T1, T2, diff=["T2"], asnumpy=False)
-    
-    # calculate cost
-    return optim.calculate_crlb(grad)
+    return sig, (dsig - sig) / dt
 
 def _crlb_finitediff_cost(ESP, T1, T2, phases, flip):
     
@@ -57,7 +105,7 @@ def _crlb_finitediff_cost(ESP, T1, T2, phases, flip):
     _, grad = fse_finitediff_grad(flip, phases, ESP, T1, T2, asnumpy=False)
     
     # calculate cost
-    return optim.calculate_crlb(grad).cpu().detach().numpy()
+    return calculate_crlb(grad).cpu().detach().numpy()
 
 def crlb_finitediff_cost(flip, ESP, T1, T2):
     
@@ -73,24 +121,35 @@ def crlb_finitediff_cost(flip, ESP, T1, T2):
                 
     return cost0, np.asarray(dcost) - cost0
 
-# %% params
+# %% 
+#
+# Now, we can compute optimization for a specific tissue.
+#
+# We assume T1 = 1000.0 ms and T2 = 100.0 ms:
+    
 t1 = 1000.0
 t2 = 100.0
 
+# %%
+#
+# Let's compute CRLB for a constant 180.0 refocusing schedule, preceded by
+# a ramp:
 angles = np.concatenate((np.linspace(0, 180.0, 36), np.ones(60, dtype=np.float32) * 180.0))
-esp = 5.0
+esp = 5.0 #ms
 
-# run
+# %%
+#
+# Run and plot timings:
+    
 t0 = time.time()
 sig0, grad0 = fse_finitediff_grad(angles, 0 * angles, esp, t1, t2)
 t1 = time.time()
 tgrad0 = t1 - t0
 
 t0 = time.time()
-sig, grad = fse_grad(angles, 0 * angles, esp, t1, t2, diff=["T2"])
+sig, grad = fse(angles, 0 * angles, esp, t1, t2, diff=["T2"])
 t1 = time.time()
 tgrad = t1 - t0
-
 
 # cost and derivative
 t0 = time.time()
@@ -103,8 +162,6 @@ cost, dcost = crlb_cost(angles, esp, t1, t2)
 t1 = time.time()
 tcost = t1 - t0
 
-# plot derivative
-#%%plots 
 fsz = 20
 plt.figure()
 plt.subplot(2,2,1)
@@ -138,7 +195,6 @@ plt.subplot(2,2,4)
 labels = ['derivative of signal', 'CRLB objective gradient']
 time_finite = [round(tgrad0, 2), round(tcost0, 2)]
 time_auto = [round(tgrad, 2), round(tcost, 2)]
-
 
 x = np.arange(len(labels))  # the label locations
 width = 0.35  # the width of the bars
