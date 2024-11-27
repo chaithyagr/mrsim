@@ -42,7 +42,9 @@ class MRFModel(AbstractModel):
         self.sequence.alpha = torch.pi * alpha / 180.0
         self.sequence.TR = TR * 1e-3  # ms -> s
         self.sequence.TI = TI * 1e-3  # ms -> s
-        self.nstates = nstates
+        self.sequence.slice_prof = slice_prof
+        self.sequence.nstates = nstates
+        self.sequence.nreps = nreps
 
     @staticmethod
     def _engine(
@@ -65,7 +67,7 @@ class MRFModel(AbstractModel):
         states = epg.states_matrix(
             device=R1.device,
             dtype=torch.float32,
-            nlocs=len(slice_prof),
+            nlocs=slice_prof.numel(),
             nstates=nstates,
         )
 
@@ -102,4 +104,4 @@ class MRFModel(AbstractModel):
                 states = epg.transverse_relaxation(states, E2)
                 states = epg.shift(states)
 
-        return torch.cat(signal)
+        return M0 * torch.stack(signal)

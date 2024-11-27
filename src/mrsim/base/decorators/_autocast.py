@@ -24,7 +24,7 @@ def autocast(func: Callable) -> Callable:
         # convert arrays to torch
         args, kwargs = _to_torch(*args, **kwargs)
 
-        # convert remaining objects to torc
+        # convert remaining objects to torch
         args, kwargs = _to_tensors(*args, **kwargs)
 
         # enforce float32 for floating point tensors
