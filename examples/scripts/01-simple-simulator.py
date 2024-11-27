@@ -1,6 +1,20 @@
-"""SSFP MR Fingerprinting simulator"""
+"""
+================
+Custom Simulator
+================
 
-# Simulator
+This example shows how to use Torch-EPG-X to implement a simulator.
+
+"""
+
+# %%
+#
+# First, we want to implement the simulation engine.
+# Parallelization and automatic differentiation are abstracted
+# away from the user, which can focus on implementing single-voxel
+# simulation
+
+# imports
 from epgtorchx import base
 from epgtorchx import ops
 
@@ -43,6 +57,13 @@ class SSFPMRF(base.BaseSimulator):
         return signal
     
     
+# %% 
+#
+# The simulator is derived from base class.
+# `sequence` method must finish with states and signal buffers here.
+#
+# We can wrap this class in a function, for user convenience:
+    
 def mrf(flip, TR, T1, T2, diff=None, device="cpu"):
     """
     Simulate an inversion-prepared SSFP sequence with variable flip angles.
@@ -69,5 +90,40 @@ def mrf(flip, TR, T1, T2, diff=None, device="cpu"):
         # actual simulation
         sig = simulator(flip=flip, TR=TR)
         return sig.cpu().numpy()
+    
+# %%
+#
+# That's it!
+# The simulator can be used on single voxel, to quickly predict signal evolution:
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+flip = np.linspace(5.0, 60.0, 1000)
+sig = mrf(flip, 10.0, 1000.0, 100.0)
+
+plt.plot(abs(sig))
+plt.xlabel("TR index")
+plt.ylabel("signal magnitude [a.u.]")
+
+# %%
+#
+# We also support parallelization, with automatic broadcasting:
+#
+sig = mrf(flip, 10.0, [1000.0, 500.0], 100.0)
+
+plt.plot(abs(sig.T))
+plt.xlabel("TR index")
+plt.ylabel("signal magnitude [a.u.]")
+
+# %%
+#
+# Automatic differentiation can be obtained by
+# providing "diff" argument:
+sig, jac = mrf(flip, 10.0, 100.0, 100.0, diff=("T1", "T2"))
+
+plt.plot(abs(jac.T))
+plt.xlabel("TR index")
+plt.ylabel("signal jacobian [a.u.]")
 
 
