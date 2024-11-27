@@ -84,13 +84,12 @@ class MRFModel(AbstractModel):
 
             # Apply inversion
             states = epg.adiabatic_inversion(states, inv_efficiency)
-            # states = -inv_efficiency * states
             states = epg.longitudinal_relaxation(states, E1inv, rE1inv)
             states = epg.spoil(states)
 
             # Scan loop
             for p in range(nshots):
-                RF = epg.rf_pulse_op(B1, alpha[p], slice_prof)
+                RF = epg.rf_pulse_op(alpha[p], slice_prof, B1)
 
                 # Apply RF pulse
                 states = epg.rf_pulse(states, RF)
