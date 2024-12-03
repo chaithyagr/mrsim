@@ -1,6 +1,5 @@
 """EPG States creation."""
 
-import pytest
 import torch
 from types import SimpleNamespace
 
