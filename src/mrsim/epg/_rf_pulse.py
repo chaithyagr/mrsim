@@ -90,7 +90,7 @@ def phased_rf_pulse_op(
     # apply B1 effect
     fa = B1 * fa
     phi = B1phase + phi
-    
+
     # apply slice profile
     fa = slice_prof * fa
 
