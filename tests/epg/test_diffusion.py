@@ -56,7 +56,7 @@ def test_diffusion(diffusion_fixture):
     Fplus = states.Fplus.clone()
     Fminus = states.Fminus.clone()
     Z = states.Z.clone()
-    
+
     D1 = torch.tensor([1.0, 0.9, 0.8])  # Longitudinal damping
     D2 = torch.tensor([0.9, 0.7, 0.5])  # Transverse damping
 
@@ -69,17 +69,13 @@ def test_diffusion(diffusion_fixture):
     assert output_states.Z.shape == Z.shape
 
     # Assert correct damping
-    assert torch.allclose(
-        output_states.Fplus, Fplus * D2
-    ), "Fplus damping incorrect"
-    assert torch.allclose(
-        output_states.Fminus, Fminus * D2
-    ), "Fminus damping incorrect"
+    assert torch.allclose(output_states.Fplus, Fplus * D2), "Fplus damping incorrect"
+    assert torch.allclose(output_states.Fminus, Fminus * D2), "Fminus damping incorrect"
     assert torch.allclose(output_states.Z, Z * D1), "Z damping incorrect"
 
 
 def test_diffusion_edge_cases(diffusion_fixture):
-    states = diffusion_fixture    
+    states = diffusion_fixture
     nstates = len(states.Fplus)
     D1 = torch.ones(nstates)  # No damping longitudinally
     D2 = torch.zeros(nstates)  # Complete transverse damping
