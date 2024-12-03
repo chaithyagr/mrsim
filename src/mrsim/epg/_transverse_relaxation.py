@@ -21,9 +21,9 @@ def transverse_relaxation_op(R2: torch.Tensor, time: torch.Tensor) -> torch.Tens
     Parameters
     ----------
     R2 : torch.Tensor
-        Transverse relaxation rate in ``1/s``.
+        Transverse relaxation rate in ``[1/s]``.
     time : torch.Tensor
-        Time interval in ``s``.
+        Time interval in ``[s]``.
 
     Returns
     -------
@@ -45,13 +45,13 @@ def transverse_relaxation_exchange_op(
     Parameters
     ----------
     k : torch.Tensor
-        Directional exchange rate matrix in ``1/s`` of shape ``(npools, npools)``.
+        Directional exchange rate matrix in ``[1/s]`` of shape ``(npools, npools)``.
     R2 : torch.Tensor
-        Transverse relaxation rate in ``1/s`` of shape ``(npools,)``.
+        Transverse relaxation rate in ``[1/s]`` of shape ``(npools,)``.
     time : torch.Tensor
-        Time interval in ``s``.
+        Time interval in ``[s]``.
     df : torch.Tensor, optional
-        Chemical exchange in ``rad/s`` of shape ``(npools,)``.
+        Chemical exchange in ``[rad/s]`` of shape ``(npools,)``.
 
     Returns
     -------

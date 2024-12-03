@@ -3,7 +3,6 @@
 __all__ = ["AbstractModel"]
 
 import inspect
-import functools
 
 from abc import ABC, abstractmethod
 from typing import Any, Callable
@@ -121,9 +120,6 @@ class AbstractModel(ABC):
             merged_kwargs[parameter_names[idx]] = arg
 
         # Split into broadcastable and non-broadcastable
-        # broadcastable_args = {
-        #     k: v for k, v in merged_kwargs.items() if k in self.broadcastable_params
-        # }
         non_broadcastable_args = {
             k: v for k, v in merged_kwargs.items() if k not in self.broadcastable_params
         }
@@ -145,7 +141,7 @@ class AbstractModel(ABC):
 
         return func, argnums
 
-    def forward(self, *args, **kwargs):
+    def _forward(self, *args, **kwargs):
         """
         Return a callable for forward computation. Useful for sequence optimization.
 
@@ -171,7 +167,7 @@ class AbstractModel(ABC):
 
         return vmapped_engine
 
-    def jacobian(self, *args, **kwargs):
+    def _jacobian(self, *args, **kwargs):
         """
         Return a callable for the Jacobian computation. Useful for sequence optimization.
 
@@ -228,7 +224,7 @@ class AbstractModel(ABC):
             k: v for k, v in kwargs.items() if k not in self.broadcastable_params
         }
 
-        forward_fn = self.forward(**non_broadcastable_kwargs)
+        forward_fn = self._forward(**non_broadcastable_kwargs)
 
         if self.diff is None:
             with torch.no_grad():
@@ -237,10 +233,144 @@ class AbstractModel(ABC):
 
         output = forward_fn(*broadcastable_kwargs.values())
 
-        jacobian_fn = self.jacobian(**non_broadcastable_kwargs)
+        jacobian_fn = self._jacobian(**non_broadcastable_kwargs)
         jacobian_output = jacobian_fn(*broadcastable_kwargs.values())
 
         return output, jacobian_output
+
+    def forward(self, compile: bool = False) -> Callable:
+        """
+        Get forward method.
+
+        Parameters
+        ----------
+        compile : bool, optional
+            Compile function using ``torch.compile``. The default is ``False``.
+
+        Returns
+        -------
+        Callable
+            Forward method.
+
+        """
+        _kwargs = {**vars(self.properties), **vars(self.sequence)}
+
+        non_broadcastable_kwargs = {
+            k: v for k, v in _kwargs.items() if k not in self.broadcastable_params
+        }
+
+        _forward_fn = self._forward(**non_broadcastable_kwargs)
+
+        # Update the signature of the forward_fn
+        # Extract the signature of `_engine`
+        engine_sig = inspect.signature(self._engine)
+        forward_sig = inspect.Signature(
+            parameters=[
+                inspect.Parameter(
+                    name=param_name,
+                    kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    default=engine_sig.parameters[param_name].default,
+                )
+                for param_name in self.broadcastable_params
+            ]
+        )
+
+        def forward_fn(*args, **kwargs):
+            # Get number of arguments
+            n_args = len(args)
+
+            # Create a dictionary of keyword arguments and their default values
+            _kwargs = {}
+            for k, v in forward_sig.parameters.items():
+                if v.default is not inspect.Parameter.empty:
+                    _kwargs[k] = v.default
+                else:
+                    _kwargs[k] = None
+
+            # Merge the default keyword arguments with the provided kwargs
+            for k in kwargs.keys():
+                _kwargs[k] = kwargs[k]
+
+            # Replace args
+            _args = list(_kwargs.values())
+            _args = list(args) + _args[n_args:]
+
+            return _forward_fn(*_args)
+
+        # Bind the new signature to the function
+        forward_fn.__signature__ = forward_sig
+
+        forward_fn = autocast(forward_fn)
+        if compile:
+            return torch.compile(forward_fn)
+        return forward_fn
+
+    def jacobian(self, compile: bool = False) -> Callable:
+        """
+        Get Jacobian method.
+
+        Parameters
+        ----------
+        compile : bool, optional
+            Compile function using ``torch.compile``. The default is ``False``.
+
+        Returns
+        -------
+        Callable
+            Jacobian method.
+
+        """
+        kwargs = {**vars(self.properties), **vars(self.sequence)}
+
+        non_broadcastable_kwargs = {
+            k: v for k, v in kwargs.items() if k not in self.broadcastable_params
+        }
+
+        _jacobian_fn = self._jacobian(**non_broadcastable_kwargs)
+
+        # Update the signature of the forward_fn
+        # Extract the signature of `_engine`
+        engine_sig = inspect.signature(self._engine)
+        jacobian_sig = inspect.Signature(
+            parameters=[
+                inspect.Parameter(
+                    name=param_name,
+                    kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    default=engine_sig.parameters[param_name].default,
+                )
+                for param_name in self.broadcastable_params
+            ]
+        )
+
+        def jacobian_fn(*args, **kwargs):
+            # Get number of arguments
+            n_args = len(args)
+
+            # Create a dictionary of keyword arguments and their default values
+            _kwargs = {}
+            for k, v in jacobian_sig.parameters.items():
+                if v.default is not inspect.Parameter.empty:
+                    _kwargs[k] = v.default
+                else:
+                    _kwargs[k] = None
+
+            # Merge the default keyword arguments with the provided kwargs
+            for k in kwargs.keys():
+                _kwargs[k] = kwargs[k]
+
+            # Replace args
+            _args = list(_kwargs.values())
+            _args = list(args) + _args[n_args:]
+
+            return _jacobian_fn(*_args)
+
+        # Bind the new signature to the function
+        jacobian_fn.__signature__ = jacobian_sig
+
+        jacobian_fn = autocast(jacobian_fn)
+        if compile:
+            return torch.compile(jacobian_fn)
+        return jacobian_fn
 
 
 # %% TODO: move

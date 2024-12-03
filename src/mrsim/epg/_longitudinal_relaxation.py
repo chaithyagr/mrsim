@@ -23,9 +23,9 @@ def longitudinal_relaxation_op(
     Parameters
     ----------
     R1 : torch.Tensor
-        Longitudinal relaxation rate in ``1/s``.
+        Longitudinal relaxation rate in ``[1/s]``.
     time : torch.Tensor
-        Time interval in ``s``.
+        Time interval in ``[s]``.
 
     Returns
     -------
@@ -52,11 +52,11 @@ def longitudinal_relaxation_exchange_op(
     weight : torch.Tensor
         Fractional weight for the different pools of shape ``(npools,)``.
     k : torch.Tensor
-        Directional exchange rate matrix in ``1/s`` of shape ``(npools, npools)``.
+        Directional exchange rate matrix in ``[1/s]`` of shape ``(npools, npools)``.
     R1 : torch.Tensor
-        Longitudinal relaxation rate in ``1/s`` of shape ``(npools,)``.
+        Longitudinal relaxation rate in ``[1/s]`` of shape ``(npools,)``.
     time : torch.Tensor
-        Time interval in ``s``.
+        Time interval in ``[s]``.
 
     Returns
     -------

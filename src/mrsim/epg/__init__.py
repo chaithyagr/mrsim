@@ -8,10 +8,10 @@ from ._states_matrix import *  # noqa
 __all__.extend(_states_matrix.__all__)
 
 
-from . import _adc_op
-from ._adc_op import *  # noqa
+from . import _adc
+from ._adc import *  # noqa
 
-__all__.extend(_adc_op.__all__)
+__all__.extend(_adc.__all__)
 
 
 from . import _shift
@@ -36,6 +36,18 @@ from . import _transverse_relaxation
 from ._transverse_relaxation import *  # noqa
 
 __all__.extend(_transverse_relaxation.__all__)
+
+
+from . import _diffusion
+from ._diffusion import *  # noqa
+
+__all__.extend(_diffusion.__all__)
+
+
+from . import _flow
+from ._flow import *  # noqa
+
+__all__.extend(_flow.__all__)
 
 
 from . import _rf_pulse
