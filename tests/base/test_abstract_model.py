@@ -32,7 +32,7 @@ def test_initialization():
 def test_forward():
     model = MyModel(chunk_size=10, diff="param")
 
-    forward_fn = model.forward(torch.tensor([1.0]))
+    forward_fn = model.forward()
 
     # Test the returned forward function
     output = forward_fn(torch.tensor([2.0]))  # Passing tensor as input
@@ -43,7 +43,7 @@ def test_forward():
 def test_jacobian():
     model = MyModel(chunk_size=10, diff="param")
 
-    jacobian_fn = model.jacobian(torch.tensor([1.0]))
+    jacobian_fn = model.jacobian()
 
     # Test the returned jacobian function
     jacobian_output = jacobian_fn(torch.tensor([2.0]))  # Passing tensor as input
@@ -54,7 +54,6 @@ def test_jacobian():
 def test_call():
     model = MyModel(chunk_size=10, diff="param")
     model.set_properties(torch.tensor([1.0]))
-    print(model.properties)
 
     output, jacobian_output = model()
 
