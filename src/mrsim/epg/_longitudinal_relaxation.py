@@ -110,7 +110,7 @@ def longitudinal_relaxation(
 
     """
     # parse
-    Z = states.Z
+    Z = states.Z.clone()
 
     # apply
     Z = Z.clone() * E1  # decay
@@ -145,7 +145,7 @@ def longitudinal_relaxation_exchange(
 
     """
     # parse
-    Z = states.Z
+    Z = states.Z.clone()
 
     # apply
     Z = torch.einsum("...ij,...j->...i", E1, Z.clone())
