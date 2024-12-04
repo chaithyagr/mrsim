@@ -22,13 +22,13 @@ class MP2RAGEModel(AbstractModel):
 
     Methods
     -------
-    set_properties(T1, M0=1.0, B1=1.0, inv_efficiency=1.0)
+    set_properties(T1, M0=1.0, inv_efficiency=1.0)
         Sets tissue relaxation properties and experimental conditions.
 
-    set_sequence(nshots, flip, TR, TI=0.0, slice_prof=1.0)
+    set_sequence(nshots, flip, TR, TI=0.0)
         Configures the pulse sequence parameters for the simulation.
 
-    _engine(T1, flip, TR, TI=0.0, M0=1.0, B1=1.0, inv_efficiency=1.0,
+    _engine(T1, TI, flip, TRspgr, TRmp2rage, nshots, M0=1.0, inv_efficiency=1.0,
             slice_prof=1.0)
         Computes the MPnRAGE signal for given tissue properties and sequence parameters.
 
@@ -39,8 +39,8 @@ class MP2RAGEModel(AbstractModel):
         from mrsim.models import MP2RAGE
 
         model = MP2RAGE()
-        model.set_properties(T1=1000, inv_efficiency=0.95)
-        model.set_sequence(nshots=128, flip=5.0, TR=10.0)
+        model.set_properties(T1=(200, 1000), inv_efficiency=0.95)
+        model.set_sequence(nshots=128, flip=5.0, TRspgr=5.0, TRmp2rage=3000.0)
         signal = model()
 
     """
@@ -50,7 +50,6 @@ class MP2RAGEModel(AbstractModel):
         self,
         T1: float | npt.ArrayLike,
         M0: float | npt.ArrayLike = 1.0,
-        B1: float | npt.ArrayLike = 1.0,
         inv_efficiency: float | npt.ArrayLike = 1.0,
     ):
         """
@@ -62,15 +61,12 @@ class MP2RAGEModel(AbstractModel):
             Longitudinal relaxation time in milliseconds.
         M0 : float or array-like, optional
             Proton density scaling factor, default is ``1.0``.
-        B1 : float | npt.ArrayLike, optional
-            Flip angle scaling map, default is ``1.0``.
         inv_efficiency : float | npt.ArrayLike, optional
             Inversion efficiency map, default is ``1.0``.
 
         """
         self.properties.T1 = T1 * 1e-3
         self.properties.M0 = M0
-        self.properties.B1 = B1
         self.properties.inv_efficiency = inv_efficiency
 
     @autocast
@@ -105,12 +101,12 @@ class MP2RAGEModel(AbstractModel):
         """
         self.sequence.nshots = nshots
         self.sequence.TI = TI * 1e-3  # ms -> s
-        if len(flip) == 1:
+        if flip.numel() == 1:
             flip = torch.repeat_interleave(flip, 2)
         self.sequence.flip = torch.pi * flip / 180.0
         self.sequence.TRspgr = TRspgr * 1e-3  # ms -> s
         self.sequence.TRmp2rage = TRmp2rage * 1e-3  # ms -> s
-        if len(nshots) == 1:
+        if nshots.numel() == 1:
             nshots = torch.repeat_interleave(nshots // 2, 2)
         self.sequence.nshots = nshots
 
@@ -123,7 +119,6 @@ class MP2RAGEModel(AbstractModel):
         TRmp2rage: float,
         nshots: int | npt.ArrayLike,
         M0: float | npt.ArrayLike = 1.0,
-        B1: float | npt.ArrayLike = 1.0,
         inv_efficiency: float | npt.ArrayLike = 1.0,
     ):
         R1 = 1 / T1

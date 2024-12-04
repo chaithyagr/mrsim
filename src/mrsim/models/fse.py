@@ -118,6 +118,8 @@ class FSEModel(AbstractModel):
         """
         self.sequence.flip = torch.pi * flip / 180.0
         self.sequence.ESP = ESP * 1e-3  # ms -> s
+        if phases.numel() == 1:
+            phases = phases * torch.ones_like(flip)
         self.sequence.phases = torch.pi * phases / 180.0
         self.sequence.exc_flip = torch.pi * exc_flip / 180.0
         self.sequence.exc_phase = torch.pi * exc_phase / 180.0
@@ -187,15 +189,16 @@ class FSEModel(AbstractModel):
 
         # Get signal
         signal = torch.stack(signal)  # (etl,)
+        signal = signal[..., None]  # (etl, 1)
 
         # Get elapsed time and time left before next TR
         elapsed_time = ESP * etl
         dt = TR - elapsed_time
 
         # Calculate relaxation until TR
-        ETR = torch.exp(-R1 * dt)[:, None]  # (nTR, 1)
+        ETR = torch.exp(-R1 * dt)  # (nTR,)
 
         # Apply modulation
-        signal = M0 * signal * (1 - ETR) / (1 - ETR * signal)  # (nTR, etl)
+        signal = M0 * signal * (1 - ETR) / (1 - ETR * signal)  # (etl, nTR)
 
-        return signal.ravel()  # (nTR*etl,)
+        return signal.swapaxes(-1, -2).ravel()  # (nTR*etl,)

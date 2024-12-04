@@ -1,36 +1,36 @@
-"""MR Fingerprinting simulator."""
+"""Balanced Steady State Free Precession simulator."""
 
-__all__ = ["mrf_sim"]
+__all__ = ["bssfp_sim"]
 
 import numpy.typing as npt
 import torch
 
-from ..models.mrf import MRFModel
+from ..models.bssfp import bSSFPModel
 
 
-def mrf_sim(
-    flip: npt.ArrayLike,
-    TR: float | npt.ArrayLike,
+def bssfp_sim(
+    flip: float | npt.ArrayLike,
+    TE: float | npt.ArrayLike,
+    TR: float,
     T1: float | npt.ArrayLike,
     T2: float | npt.ArrayLike,
     diff: str | tuple[str] = None,
-    slice_prof: float | npt.ArrayLike = 1.0,
-    B1: float | npt.ArrayLike = 1.0,
-    inv_efficiency: float | npt.ArrayLike = 1.0,
+    phase_inc: float = 180.0,
+    B0: float | npt.ArrayLike = 0.0,
+    chemshift: float | npt.ArrayLike = 0.0,
     M0: float | npt.ArrayLike = 1.0,
-    TI: float = 0.0,
-    nstates: int = 10,
-    nreps: int = 1,
     chunk_size: int = None,
     device: str | torch.device = None,
 ):
     """
-    SSFP MR Fingerprinting simulator wrapper.
+    SPoiled Gradient Recalled echo simulator wrapper.
 
     Parameters
     ----------
     flip : float | npt.ArrayLike
         Flip angle train in degrees.
+    TE : float | npt.ArrayLike
+        Echo time in milliseconds.
     TR : float | npt.ArrayLike
         Repetition time in milliseconds.
     T1 : float | npt.ArrayLike
@@ -40,24 +40,15 @@ def mrf_sim(
     diff : str | tuple[str], optional
         Arguments to get the signal derivative with respect to.
         The default is ``None`` (no differentation).
-    slice_prof : float | npt.ArrayLike, optional
-        Flip angle scaling along slice profile.
-        The default is ``1.0``.
-    B1 : float | npt.ArrayLike, optional
-        Flip angle scaling map, default is ``1.0``.
-    inv_efficiency : float | npt.ArrayLike, optional
-        Inversion efficiency map, default is ``1.0``.
+    phase_inc : float, optional
+        Linear phase-cycle increment in degrees.
+        The default is ``180.0``
+    B0 : float | npt.ArrayLike, optional
+        Frequency offset map in Hz, default is ``0.0.``
+    chemshift : float | npt.ArrayLik, optional
+        Chemical shift in Hz, default is ``0.0``.
     M0 : float or array-like, optional
         Proton density scaling factor, default is ``1.0``.
-    TI : float | npt.ArrayLike, optional
-        Inversion time in milliseconds.
-        The default is ``0.0``.
-    nstates : int, optional
-        Number of EPG states to be retained.
-        The default is ``10``.
-    nreps : int, optional
-        Number of simulation repetitions.
-        The default is ``1``.
     chunk_size : int, optional
         Number of atoms to be simulated in parallel.
         The default is ``None``.
@@ -75,7 +66,7 @@ def mrf_sim(
         Not returned if ``diff`` is ``None``.
 
     """
-    model = MRFModel(diff, chunk_size, device)
-    model.set_properties(T1, T2, M0, B1, inv_efficiency)
-    model.set_sequence(flip, TR, TI, slice_prof, nstates, nreps)
+    model = bSSFPModel(diff, chunk_size, device)
+    model.set_properties(T1, T2, M0, B0, chemshift)
+    model.set_sequence(flip, TR, TE, phase_inc)
     return model()

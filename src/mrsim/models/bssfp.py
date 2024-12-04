@@ -22,7 +22,7 @@ class bSSFPModel(AbstractModel):
     set_properties(T1, T2, M0=1.0, B0=0.0, chemshift=0.0):
         Set tissue and system-specific properties for the SPGR model.
 
-    set_sequence(flip, TR, TE=None, phase_inc=0.0):
+    set_sequence(flip, TR, TE=None, phase_inc=180.0):
         Set sequence parameters including flip angle, repetition time (TR),
         echo time (TE) and RF phase increment.
 
@@ -82,7 +82,7 @@ class bSSFPModel(AbstractModel):
         self,
         flip: float | npt.ArrayLike,
         TR: float | npt.ArrayLike,
-        phase_inc: float = 0.0,
+        phase_inc: float = 180.0,
         TE: float | npt.ArrayLike = None,
     ):
         """
@@ -96,7 +96,7 @@ class bSSFPModel(AbstractModel):
             Repetition time in milliseconds.
         phase_inc : float, optional
             Linear phase-cycle increment in degrees.
-            The default is ``0.0``
+            The default is ``180.0``
         TE : float | npt.ArrayLike, optional
             Echo time in milliseconds.
             The default is ``None`` (i.e., ``TR/2``).
@@ -119,7 +119,7 @@ class bSSFPModel(AbstractModel):
         M0: float | npt.ArrayLike = 1.0,
         B0: float | npt.ArrayLike = 0.0,
         chemshift: float | npt.ArrayLike = 0.0,
-        phase_inc: float = 0.0,
+        phase_inc: float = 180.0,
     ):
         # Prepare relaxation parameters
         R1, R2 = 1 / T1, 1 / T2

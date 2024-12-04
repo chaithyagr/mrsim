@@ -110,6 +110,7 @@ class MPnRAGEModel(AbstractModel):
     @staticmethod
     def _engine(
         T1: float | npt.ArrayLike,
+        nshots: int,
         flip: float | npt.ArrayLike,
         TR: float | npt.ArrayLike,
         TI: float = 0.0,
@@ -135,9 +136,6 @@ class MPnRAGEModel(AbstractModel):
 
         # Prepare relaxation operator for sequence loop
         E1, rE1 = epg.longitudinal_relaxation_op(R1, TR)
-
-        # Get number of shots
-        nshots = len(flip)
 
         # Initialize signal
         signal = []

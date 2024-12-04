@@ -1,50 +1,50 @@
-"""MR Fingerprinting simulator."""
+"""MP2RAGE simulator."""
 
-__all__ = ["mrf_sim"]
+__all__ = ["mp2rage_sim"]
 
 import numpy.typing as npt
 import torch
 
-from ..models.mrf import MRFModel
+from ..models.mp2rage import MP2RAGEModel
 
 
-def mrf_sim(
-    flip: npt.ArrayLike,
-    TR: float | npt.ArrayLike,
+def mp2rage_sim(
+    TI: npt.ArrayLike,
+    flip: float | npt.ArrayLike,
+    TRspgr: float,
+    TRmp2rage: float,
+    nshots: int | npt.ArrayLike,
     T1: float | npt.ArrayLike,
-    T2: float | npt.ArrayLike,
     diff: str | tuple[str] = None,
-    slice_prof: float | npt.ArrayLike = 1.0,
-    B1: float | npt.ArrayLike = 1.0,
     inv_efficiency: float | npt.ArrayLike = 1.0,
     M0: float | npt.ArrayLike = 1.0,
-    TI: float = 0.0,
-    nstates: int = 10,
-    nreps: int = 1,
     chunk_size: int = None,
     device: str | torch.device = None,
 ):
     """
-    SSFP MR Fingerprinting simulator wrapper.
+    MP2RAGE simulator wrapper.
 
     Parameters
     ----------
+    TI : npt.ArrayLike
+        Inversion time (s) in milliseconds of shape ``(2,)``.
     flip : float | npt.ArrayLike
-        Flip angle train in degrees.
-    TR : float | npt.ArrayLike
-        Repetition time in milliseconds.
+        Flip angle train in degrees of shape ``(2,)``.
+        If scalar, assume same angle for both blocks.
+    TRspgr : float
+        Repetition time in milliseconds for each SPGR readout.
+    TRmp2rage : float
+        Repetition time in milliseconds for the whole inversion block.
+    nshots : int | npt.ArrayLike
+        Number of SPGR readout within the inversion block of shape ``(npre, npost)``
+        If scalar, assume ``npre == npost == 0.5 * nshots``. Usually, this
+        is the number of slice encoding lines ``(nshots = nz / Rz)``,
+        i.e., the number of slices divided by the total acceleration factor along ``z``.
     T1 : float | npt.ArrayLike
         Longitudinal relaxation time in milliseconds.
-    T2 : float | npt.ArrayLike
-        Transverse relaxation time in milliseconds.
     diff : str | tuple[str], optional
         Arguments to get the signal derivative with respect to.
         The default is ``None`` (no differentation).
-    slice_prof : float | npt.ArrayLike, optional
-        Flip angle scaling along slice profile.
-        The default is ``1.0``.
-    B1 : float | npt.ArrayLike, optional
-        Flip angle scaling map, default is ``1.0``.
     inv_efficiency : float | npt.ArrayLike, optional
         Inversion efficiency map, default is ``1.0``.
     M0 : float or array-like, optional
@@ -52,12 +52,6 @@ def mrf_sim(
     TI : float | npt.ArrayLike, optional
         Inversion time in milliseconds.
         The default is ``0.0``.
-    nstates : int, optional
-        Number of EPG states to be retained.
-        The default is ``10``.
-    nreps : int, optional
-        Number of simulation repetitions.
-        The default is ``1``.
     chunk_size : int, optional
         Number of atoms to be simulated in parallel.
         The default is ``None``.
@@ -75,7 +69,7 @@ def mrf_sim(
         Not returned if ``diff`` is ``None``.
 
     """
-    model = MRFModel(diff, chunk_size, device)
-    model.set_properties(T1, T2, M0, B1, inv_efficiency)
-    model.set_sequence(flip, TR, TI, slice_prof, nstates, nreps)
+    model = MP2RAGEModel(diff, chunk_size, device)
+    model.set_properties(T1, M0, inv_efficiency)
+    model.set_sequence(TI, flip, TRspgr, TRmp2rage, nshots)
     return model()
