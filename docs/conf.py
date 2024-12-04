@@ -78,9 +78,10 @@ sphinx_gallery_conf = {
     "reference_url": {"mrsim": None},
     "examples_dirs": ["../examples/"],
     "gallery_dirs": ["generated/autoexamples"],
-    "filename_pattern": "/example_",
+    "filename_pattern": "/0",
     "ignore_pattern": r"(__init__|conftest|utils).py",
     "nested_sections": True,
+    "within_subsection_order": "FileNameSortKey",
     "binder": {
         "org": "infn-mri",
         "repo": "mrsim",
@@ -114,7 +115,7 @@ html_theme = "sphinx_book_theme"
 # so a file named "default.css" will overwrite the builtin "default.css".
 # html_static_path = ["_static"]
 html_theme_options = {
-    "repository_url": "https://github.com/INFN-MRI/mrtwin",
+    "repository_url": "https://github.com/INFN-MRI/mrsim",
     "use_repository_button": True,
     "use_issues_button": True,
     "use_edit_page_button": True,

@@ -6,12 +6,12 @@ Custom Simulator
 This example shows how to use Torch-EPG-X to implement a simulator.
 
 
-# First, we want to implement the simulation engine.
-# Parallelization and automatic differentiation are abstracted
-# away from the user, which can focus on implementing single-voxel
-# simulation
+First, we want to implement the simulation engine.
+Parallelization and automatic differentiation are abstracted
+away from the user, which can focus on implementing single-voxel
+simulation
 
-# we begin with the necessary imports:
+we begin with the necessary imports:
 """
 
 import warnings
