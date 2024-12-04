@@ -12,7 +12,39 @@ from .. import epg
 
 
 class MRFModel(AbstractModel):
-    """SSFP Magnetic Resonance Fingerprinting."""
+    """
+    SSFP Magnetic Resonance Fingerprinting (MRF) Model.
+
+    This class simulates steady-state free precession (SSFP) MRF signals based on
+    tissue properties, pulse sequence parameters, and experimental conditions. It
+    uses Extended Phase Graph (EPG) formalism to compute the magnetization evolution
+    over time.
+
+    Methods
+    -------
+    set_properties(T1, T2, M0=1.0, B1=1.0, inv_efficiency=1.0)
+        Sets tissue relaxation properties and experimental conditions.
+
+    set_sequence(alpha, TR, TI=0.0, slice_prof=1.0, nstates=10, nreps=1)
+        Configures the pulse sequence parameters for the simulation.
+
+    _engine(T1, T2, alpha, TR, TI=0.0, M0=1.0, B1=1.0, inv_efficiency=1.0,
+            slice_prof=1.0, nstates=10, nreps=2)
+        Computes the MRF signal for given tissue properties and sequence parameters.
+
+    Examples
+    --------
+    .. exec::
+
+        import torch
+        from mrsim.models import MRFModel
+
+        model = MRFModel()
+        model.set_properties(T1=1000, T2=80, M0=1.0, B1=1.0, inv_efficiency=0.95)
+        model.set_sequence(alpha=torch.linspace(5.0, 60.0, 1000), TR=10.0, nstates=20, nreps=1)
+        signal = model()
+
+    """
 
     @autocast
     def set_properties(
@@ -23,6 +55,23 @@ class MRFModel(AbstractModel):
         B1: float | npt.ArrayLike = 1.0,
         inv_efficiency: float | npt.ArrayLike = 1.0,
     ):
+        """
+        Set tissue and system-specific properties for the MRF model.
+
+        Parameters
+        ----------
+        T1 : float | npt.ArrayLike
+            Longitudinal relaxation time in milliseconds.
+        T2 : float | npt.ArrayLike
+            Transverse relaxation time in milliseconds.
+        M0 : float or array-like, optional
+            Proton density scaling factor, default is ``1.0``.
+        B1 : float | npt.ArrayLike, optional
+            Flip angle scaling map, default is ``1.0``.
+        inv_efficiency : float | npt.ArrayLike, optional
+            Inversion efficiency map, default is ``1.0``.
+
+        """
         self.properties.T1 = T1 * 1e-3
         self.properties.T2 = T2 * 1e-3
         self.properties.M0 = M0
@@ -39,6 +88,29 @@ class MRFModel(AbstractModel):
         nstates: int = 10,
         nreps: int = 1,
     ):
+        """
+        Set sequence parameters for the SPGR model.
+
+        Parameters
+        ----------
+        alpha : float | npt.ArrayLike
+            Flip angle train in degrees.
+        TR : float | npt.ArrayLike
+            Repetition time in milliseconds.
+        TI : float | npt.ArrayLike, optional
+            Inversion time in milliseconds.
+            The default is ``0.0``.
+        slice_prof : float | npt.ArrayLike, optional
+            Flip angle scaling along slice profile.
+            The default is ``1.0``.
+        nstates : int, optional
+            Number of EPG states to be retained.
+            The default is ``10``.
+        nreps : int, optional
+            Number of simulation repetitions.
+            The default is ``1``.
+
+        """
         self.sequence.alpha = torch.pi * alpha / 180.0
         self.sequence.TR = TR * 1e-3  # ms -> s
         self.sequence.TI = TI * 1e-3  # ms -> s
