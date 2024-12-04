@@ -1,6 +1,6 @@
-"""Unbalanced SSFP MR Fingerprinting sub-routines."""
+"""MPnRAGE sub-routines."""
 
-__all__ = ["MRFModel"]
+__all__ = ["MPnRAGEModel"]
 
 from ..base import AbstractModel
 from ..base import autocast
@@ -11,37 +11,36 @@ import torch
 from .. import epg
 
 
-class MRFModel(AbstractModel):
+class MPnRAGEModel(AbstractModel):
     """
-    SSFP Magnetic Resonance Fingerprinting (MRF) Model.
+    Magnetization Prepared (n) RApid Gradient Echo (MPnRAGE) Model.
 
-    This class simulates steady-state free precession (SSFP) MRF signals based on
-    tissue properties, pulse sequence parameters, and experimental conditions. It
-    uses Extended Phase Graph (EPG) formalism to compute the magnetization evolution
-    over time.
+    This class Magnetization Prepared RApid Gradient Echo with n volumes per segment
+    (MPnRAGE) signals based on tissue properties, pulse sequence parameters,
+    and experimental conditions. It uses Extended Phase Graph (EPG) formalism
+    to compute the magnetization evolution over time.
 
     Methods
     -------
-    set_properties(T1, T2, M0=1.0, B1=1.0, inv_efficiency=1.0)
+    set_properties(T1, M0=1.0, B1=1.0, inv_efficiency=1.0)
         Sets tissue relaxation properties and experimental conditions.
 
-    set_sequence(flip, TR, TI=0.0, slice_prof=1.0, nstates=10, nreps=1)
+    set_sequence(nshots, flip, TR, TI=0.0, slice_prof=1.0)
         Configures the pulse sequence parameters for the simulation.
 
-    _engine(T1, T2, flip, TR, TI=0.0, M0=1.0, B1=1.0, inv_efficiency=1.0,
-            slice_prof=1.0, nstates=10, nreps=1)
-        Computes the MRF signal for given tissue properties and sequence parameters.
+    _engine(T1, flip, TR, TI=0.0, M0=1.0, B1=1.0, inv_efficiency=1.0,
+            slice_prof=1.0)
+        Computes the MPnRAGE signal for given tissue properties and sequence parameters.
 
     Examples
     --------
     .. exec::
 
-        import torch
-        from mrsim.models import MRFModel
+        from mrsim.models import MPnRAGE
 
-        model = MRFModel()
-        model.set_properties(T1=1000, T2=80, M0=1.0, B1=1.0, inv_efficiency=0.95)
-        model.set_sequence(flip=torch.linspace(5.0, 60.0, 1000), TR=10.0, nstates=20, nreps=1)
+        model = MPnRAGE()
+        model.set_properties(T1=1000, inv_efficiency=0.95)
+        model.set_sequence(nshots=128, flip=5.0, TR=10.0)
         signal = model()
 
     """
@@ -50,7 +49,6 @@ class MRFModel(AbstractModel):
     def set_properties(
         self,
         T1: float | npt.ArrayLike,
-        T2: float | npt.ArrayLike,
         M0: float | npt.ArrayLike = 1.0,
         B1: float | npt.ArrayLike = 1.0,
         inv_efficiency: float | npt.ArrayLike = 1.0,
@@ -62,8 +60,6 @@ class MRFModel(AbstractModel):
         ----------
         T1 : float | npt.ArrayLike
             Longitudinal relaxation time in milliseconds.
-        T2 : float | npt.ArrayLike
-            Transverse relaxation time in milliseconds.
         M0 : float or array-like, optional
             Proton density scaling factor, default is ``1.0``.
         B1 : float | npt.ArrayLike, optional
@@ -73,7 +69,6 @@ class MRFModel(AbstractModel):
 
         """
         self.properties.T1 = T1 * 1e-3
-        self.properties.T2 = T2 * 1e-3
         self.properties.M0 = M0
         self.properties.B1 = B1
         self.properties.inv_efficiency = inv_efficiency
@@ -81,21 +76,22 @@ class MRFModel(AbstractModel):
     @autocast
     def set_sequence(
         self,
-        flip: float | npt.ArrayLike,
-        TR: float | npt.ArrayLike,
+        nshots: int,
+        flip: float,
+        TR: float,
         TI: float = 0.0,
         slice_prof: float | npt.ArrayLike = 1.0,
-        nstates: int = 10,
-        nreps: int = 1,
     ):
         """
         Set sequence parameters for the SPGR model.
 
         Parameters
         ----------
-        flip : float | npt.ArrayLike
+        nshots : int
+            Number of SPGR shots per inversion block.
+        flip : float
             Flip angle train in degrees.
-        TR : float | npt.ArrayLike
+        TR : float
             Repetition time in milliseconds.
         TI : float, optional
             Inversion time in milliseconds.
@@ -103,25 +99,17 @@ class MRFModel(AbstractModel):
         slice_prof : float | npt.ArrayLike, optional
             Flip angle scaling along slice profile.
             The default is ``1.0``.
-        nstates : int, optional
-            Number of EPG states to be retained.
-            The default is ``10``.
-        nreps : int, optional
-            Number of simulation repetitions.
-            The default is ``1``.
 
         """
+        self.sequence.nshots = nshots
         self.sequence.flip = torch.pi * flip / 180.0
         self.sequence.TR = TR * 1e-3  # ms -> s
         self.sequence.TI = TI * 1e-3  # ms -> s
         self.sequence.slice_prof = slice_prof
-        self.sequence.nstates = nstates
-        self.sequence.nreps = nreps
 
     @staticmethod
     def _engine(
         T1: float | npt.ArrayLike,
-        T2: float | npt.ArrayLike,
         flip: float | npt.ArrayLike,
         TR: float | npt.ArrayLike,
         TI: float = 0.0,
@@ -129,50 +117,47 @@ class MRFModel(AbstractModel):
         B1: float | npt.ArrayLike = 1.0,
         inv_efficiency: float | npt.ArrayLike = 1.0,
         slice_prof: float | npt.ArrayLike = 1.0,
-        nstates: int = 10,
-        nreps: int = 1,
     ):
         # Prepare relaxation parameters
-        R1, R2 = 1 / T1, 1 / T2
+        R1 = 1 / T1
 
         # Prepare EPG states matrix
         states = epg.states_matrix(
             device=R1.device,
             nlocs=slice_prof.numel(),
-            nstates=nstates,
+            nstates=1,
         )
+        # Prepare excitation pulse
+        RF = epg.rf_pulse_op(flip, slice_prof, B1)
 
         # Prepare relaxation operator for preparation pulse
         E1inv, rE1inv = epg.longitudinal_relaxation_op(R1, TI)
 
         # Prepare relaxation operator for sequence loop
         E1, rE1 = epg.longitudinal_relaxation_op(R1, TR)
-        E2 = epg.transverse_relaxation_op(R2, TR)
 
         # Get number of shots
         nshots = len(flip)
 
-        for r in range(nreps):
-            signal = []
+        # Initialize signal
+        signal = []
 
-            # Apply inversion
-            states = epg.adiabatic_inversion(states, inv_efficiency)
-            states = epg.longitudinal_relaxation(states, E1inv, rE1inv)
+        # Apply inversion
+        states = epg.adiabatic_inversion(states, inv_efficiency)
+        states = epg.longitudinal_relaxation(states, E1inv, rE1inv)
+        states = epg.spoil(states)
+
+        # Scan loop
+        for p in range(nshots):
+
+            # Apply RF pulse
+            states = epg.rf_pulse(states, RF)
+
+            # Record signal
+            signal.append(epg.get_signal(states))
+
+            # Evolve
+            states = epg.longitudinal_relaxation(states, E1, rE1)
             states = epg.spoil(states)
-
-            # Scan loop
-            for p in range(nshots):
-                RF = epg.rf_pulse_op(flip[p], slice_prof, B1)
-
-                # Apply RF pulse
-                states = epg.rf_pulse(states, RF)
-
-                # Record signal
-                signal.append(epg.get_signal(states))
-
-                # Evolve
-                states = epg.longitudinal_relaxation(states, E1, rE1)
-                states = epg.transverse_relaxation(states, E2)
-                states = epg.shift(states)
 
         return M0 * torch.stack(signal)
