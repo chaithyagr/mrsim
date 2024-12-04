@@ -57,6 +57,8 @@ doc = [
 "matplotlib", 
 "sigpy", 
 "torchio",
+"numba",
+"ipywidgets",
 ]
 
 # List URLs that are relevant to your project

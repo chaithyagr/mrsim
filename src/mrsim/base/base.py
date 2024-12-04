@@ -10,6 +10,8 @@ from types import SimpleNamespace
 
 import torch
 
+from mrinufft._array_compat import _get_leading_argument, _get_device
+
 from .decorators import autocast, broadcast, jacfwd
 
 
@@ -38,7 +40,7 @@ class AbstractModel(ABC):
 
         """
         self.chunk_size = chunk_size
-        self.device = device if device is not None else torch.device("cpu")
+        self.device = device
         self.diff = diff
 
         # Extract broadcastable parameters
@@ -217,6 +219,22 @@ class AbstractModel(ABC):
         """
         kwargs = {**vars(self.properties), **vars(self.sequence)}
 
+        # Get device
+        if self.device is None:
+            # get device from first positional or keyworded argument
+            leading_arg = _get_leading_argument([], kwargs)
+
+            # get array module from leading argument
+            device = _get_device(leading_arg)
+        else:
+            device = self.device
+
+        # Force device
+        for k in kwargs.keys():
+            if isinstance(kwargs[k], torch.Tensor):
+                kwargs[k] = kwargs[k].to(device)
+
+        # Split broadcastable and non-broadcastable params
         broadcastable_kwargs = {
             k: v for k, v in kwargs.items() if k in self.broadcastable_params
         }
@@ -224,15 +242,19 @@ class AbstractModel(ABC):
             k: v for k, v in kwargs.items() if k not in self.broadcastable_params
         }
 
+        # Get forward function
         forward_fn = self._forward(**non_broadcastable_kwargs)
 
+        # If no derivative is requested, run forward with explicit `no_grad()` for performance
         if self.diff is None:
             with torch.no_grad():
                 output = forward_fn(*broadcastable_kwargs.values())
             return output
 
+        # Run forward pass
         output = forward_fn(*broadcastable_kwargs.values())
 
+        # Get derivative and run
         jacobian_fn = self._jacobian(**non_broadcastable_kwargs)
         jacobian_output = jacobian_fn(*broadcastable_kwargs.values())
 

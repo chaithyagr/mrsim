@@ -185,7 +185,7 @@ class FSEModel(AbstractModel):
             states = epg.transverse_relaxation(states, E2)
 
             # Record signal
-            signal.append(epg.get_signal(states))
+            signal.append(epg.get_demodulated_signal(states, phases[p]))
 
         # Get signal
         signal = torch.stack(signal)  # (etl,)
