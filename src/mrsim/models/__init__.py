@@ -1,5 +1,4 @@
-"""
-"""
+"""Signal Models sub-package."""
 
 __all__ = []
 

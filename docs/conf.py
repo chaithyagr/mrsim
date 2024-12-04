@@ -43,6 +43,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx_gallery.gen_gallery",
     "sphinx_add_colab_link",
+    "sphinx_exec_directive",
 ]
 
 # Add any paths that contain templates here, relative to this directory.

@@ -11,4 +11,4 @@ __all__.extend(_b1rms.__all__)
 from . import _slice_prof
 from ._slice_prof import *  # noqa
 
-__all__.extend(_slice_prof)
+__all__.extend(_slice_prof.__all__)

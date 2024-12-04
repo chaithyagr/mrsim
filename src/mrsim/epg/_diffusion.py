@@ -2,7 +2,6 @@
 
 __all__ = ["diffusion_op", "diffusion"]
 
-
 from types import SimpleNamespace
 
 import torch
