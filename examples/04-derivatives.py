@@ -33,14 +33,15 @@ import time
 # for example for quantitative MRI
 #
 # We'll focuse on a simple Fast Spin Echo acquisition:
+#
 
-# get simulator
 import mrsim
 
 # %%
 #
 # Cramer Rao Lower Bound is defined as the diagonal of the inverse
 # of Fisher information matrix. This can be computed as
+#
 
 
 def calculate_crlb(grad, W=None, weight=1.0):
@@ -68,6 +69,7 @@ def calculate_crlb(grad, W=None, weight=1.0):
 # wrt sequence parameters.
 #
 # This can be obtained as:
+#
 
 
 def _crlb_cost(ESP, T1, T2, phases, flip):
@@ -97,7 +99,8 @@ def crlb_cost(flip, ESP, T1, T2):
 #
 # As reference, we compute derivatives via finite differences
 # approximation. This is inaccurate, but as easy to implement
-# as automatic differentiationç
+# as automatic differentiation:
+#
 
 
 def fse_finitediff_grad(flip, phases, ESP, T1, T2, asnumpy=True):
@@ -139,7 +142,7 @@ def crlb_finitediff_cost(flip, ESP, T1, T2):
 # Now, we can compute optimization for a specific tissue.
 #
 # We assume T1 = 1000.0 ms and T2 = 100.0 ms:
-
+#
 t1 = 1000.0
 t2 = 100.0
 
@@ -147,6 +150,7 @@ t2 = 100.0
 #
 # Let's compute CRLB for a constant 180.0 refocusing schedule, preceded by
 # a ramp:
+#
 angles = np.concatenate(
     (np.linspace(0, 180.0, 36), np.ones(60, dtype=np.float32) * 180.0)
 )
@@ -155,7 +159,7 @@ esp = 5.0  # ms
 # %%
 #
 # Run and plot timings:
-
+#
 t0 = time.time()
 sig0, grad0 = fse_finitediff_grad(angles, 0 * angles, esp, t1, t2)
 t1 = time.time()
@@ -179,7 +183,7 @@ cost, dcost = crlb_cost(angles, esp, t1, t2)
 t1 = time.time()
 tcost = t1 - t0
 
-fsz = 20
+fsz = 10
 plt.figure()
 plt.subplot(2, 2, 1)
 plt.rcParams.update({"font.size": 0.5 * fsz})
@@ -221,7 +225,6 @@ rects2 = plt.bar(x - width / 2, time_auto, width, label="Auto Diff")
 # Add some text for labels, title and custom x-axis tick labels, etc.
 plt.ylabel("Execution Time [s]", fontsize=fsz)
 plt.xticks(x, labels, fontsize=fsz)
-# plt.ylim([0, 25])
 plt.legend()
 
 plt.bar_label(rects1, padding=3, fontsize=fsz)

@@ -1,10 +1,10 @@
-Developing MRTwin
-=================
+Developing MRSim
+================
 
 Developement environment
 ------------------------
 
-We recommend to use a virtual environement (e.g., Conda), and install mrtwin and its dependencies in it.
+We recommend to use a virtual environement (e.g., Conda), and install mrsim and its dependencies in it.
 
 
 Running tests
@@ -12,18 +12,18 @@ Running tests
 
 Test suite can be executed as ::
     
-    cd mrtwin 
+    cd mrsim 
     pip install -e .[test]
     pytest .
 
 Writing documentation
 ---------------------
 
-Documentation is available online at https://github.com/INFN-MRI/mrtwin
+Documentation is available online at https://github.com/INFN-MRI/mrsim
 
 It can also be built locally ::
 
-    cd mrtwin
+    cd mrsim
     pip install -e .[doc]
     python -m sphinx docs docs_build
 

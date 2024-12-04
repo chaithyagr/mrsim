@@ -3,17 +3,20 @@
 Parameter Fitting
 =================
 
-This example shows how to use Torch-EPG-X to perform parameter inference.
+This example shows how to use MRSim to perform parameter inference.
 
-We will build on the previous example.
+We will build on the previous example. We will use ``numba``, which can 
+be installed as:
 
 """
 
 # %%
 #
+# ``pip install numba``
+#
 # We'll generate an FSE dataset from IXI database.
 # We will neglect encoding and assume single coil for this case.
-
+#
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -31,7 +34,6 @@ ixi_dataset = tio.datasets.IXI(
 
 # get subject 0
 sample_subject = ixi_dataset[0]
-
 
 M0 = sample_subject.PD.numpy().astype(np.float32).squeeze()[:, :, 60].T
 T2w = sample_subject.T2.numpy().astype(np.float32).squeeze()[:, :, 60].T
@@ -83,7 +85,7 @@ plt.imshow(abs(img), cmap="gray"), plt.axis("image"), plt.axis("off")
 #
 # now, we want to implement a simple dictionary based inference algorithm.
 # We first need a container to store the dictionary. We'll use Python dataclasses for this:
-
+#
 from dataclasses import dataclass
 
 
@@ -111,7 +113,7 @@ class BlochDictionary:
 #
 # Now, we implement a simple exhaustive search algorithm. We'll use Numba to parallelize it
 # across different voxels:
-
+#
 import numba as nb
 
 
@@ -119,6 +121,7 @@ import numba as nb
 #
 # This is the main algorithm. We select matching entry using dot product
 # as a cost function:
+#
 def _matching(signals, atoms, labels):
     """
     performs pattern matching step.
@@ -136,6 +139,7 @@ def _matching(signals, atoms, labels):
 # %%
 #
 # We need to implement the dot search:
+#
 @nb.njit(fastmath=True, parallel=True)  # pragma: no cover
 def _dot_search(time_series, dictionary, cost, idx):
     for n in nb.prange(time_series.shape[0]):
@@ -151,6 +155,7 @@ def _dot_search(time_series, dictionary, cost, idx):
 # %%
 #
 # Here, we implement a trivial dot product, compatible with numba:
+#
 
 
 @nb.njit(fastmath=True, cache=True)  # pragma: no cover
@@ -165,6 +170,7 @@ def _dot_product(x, y):
 # %%
 #
 # We now create a wrapper to handle arbitrarily shaped inputs:
+#
 
 
 def matching(bloch_dict, time_series):
@@ -190,7 +196,7 @@ def matching(bloch_dict, time_series):
 # We can assume the above code to be in a library. We now want to
 # integrate it with our signal model from epg-torch-x. This can be done
 # as:
-
+#
 import torch
 
 
@@ -214,7 +220,7 @@ def fse_fit(input, t2grid, flip, ESP, phases=None):
     atoms = mrsim.fse_sim(flip=flip, phases=phases, ESP=ESP, T1=t1, T2=t2lut).numpy(
         force=True
     )
-    blochdict = BlochDictionary(atoms, t2lut[:, None], ["T2"])
+    blochdict = BlochDictionary(abs(atoms), t2lut[:, None], ["T2"])
 
     # perform matching
     m0, maps = matching(blochdict, input)

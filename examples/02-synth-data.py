@@ -3,21 +3,21 @@
 Synthetic Data Generation
 =========================
 
-This example shows how to use Torch-EPG-X to generate synthetic data.
+This example shows how to use MRSim to generate synthetic data.
 
 We will use torchio and sigpy to get realistic ground truth maps and
-coil sensitivities. These can be installed as
-
-``pip install torchio``
-``pip install sigpy``
+coil sensitivities. These can be installed as:
 
 """
 
 # %%
 #
+# ``pip install torchio``
+# ``pip install sigpy``
+#
 # We will use realistic maps from the IXI dataset,
 # downloaded using ``torchio``:
-
+#
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -38,7 +38,7 @@ sample_subject = ixi_dataset[0]
 # We will now extract an example slice
 # and compute M0 and T2 maps to be used
 # as simulation inputs.
-
+#
 import numpy as np
 
 M0 = sample_subject.PD.numpy().astype(np.float32).squeeze()[:, :, 60].T
@@ -57,10 +57,12 @@ T2 = np.clip(T2, a_min=0.0, a_max=np.inf)
 M0 = np.flip(M0)
 T2 = np.flip(T2)
 
-# %% now, we can create our simulation function
+# %%
+#
+# Now, we can create our simulation function
 #
 # Let's use mrsim fse simulator
-
+#
 import mrsim
 
 
@@ -74,7 +76,7 @@ def simulate(T2, flip, ESP, phases=None, device="cpu"):
         flip=flip, phases=phases, ESP=ESP, T1=1000.0, T2=T2.flatten(), device=device
     )
 
-    return abs(output.T.reshape(-1, *ishape)).numpy(force=True)
+    return output.T.reshape(-1, *ishape).numpy(force=True)
 
 
 # %%
@@ -106,15 +108,15 @@ smaps = smri.birdcage_maps((8, *echo_series.shape[1:]))
 # %%
 #
 # We can simulate effects of coil by simple multiplication:
-
+#
 echo_series = smaps[:, None, ...] * echo_series
 print(echo_series.shape)
 
 # %%
 #
-# now, we want to simulate k-space encoding. We will use a simple Poisson Cartesian encoding
+# Now, we want to simulate k-space encoding. We will use a simple Poisson Cartesian encoding
 # from Sigpy.
-
+#
 import sigpy as sp
 
 mask = np.stack([smri.poisson(T2.shape, 32) for n in range(32)], axis=0)
@@ -143,6 +145,7 @@ def generate_synth_data(M0, T2, flip, ESP, phases=None, ncoils=8, device="cpu"):
 # %%
 #
 # Reconstruction shows the effect of undersampling:
+#
 ksp = generate_synth_data(M0, T2, flip, ESP, device=device)
 recon = sp.ifft(ksp, axes=range(-2, 0))
 recon = (recon**2).sum(axis=0) ** 0.5
@@ -152,4 +155,4 @@ plt.imshow(abs(img), cmap="gray"), plt.axis("image"), plt.axis("off")
 # %%
 #
 # This can be combined with data augmentation in torchio to generate synthetic
-# datasets, such as in Synth-MOLED
+# datasets, such as in Synth-MOLED.

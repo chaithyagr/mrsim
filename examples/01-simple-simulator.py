@@ -3,15 +3,16 @@
 Custom Simulator
 ================
 
-This example shows how to use Torch-EPG-X to implement a simulator.
+This example shows how to use MRSim to implement a simulator.
 
 
 First, we want to implement the simulation engine.
 Parallelization and automatic differentiation are abstracted
 away from the user, which can focus on implementing single-voxel
-simulation
+simulation.
 
-we begin with the necessary imports:
+We begin with the necessary imports:
+    
 """
 
 import warnings
@@ -95,9 +96,9 @@ class SSFPMRFModel(base.AbstractModel):
 # The simulator is derived from base class.
 # Base constructor accept the following parameters:
 #
-# 1. ``diff``: this is either a string or a tuple of strings containing the name of the parameter
-#     we want to calculate the derivatives (e.g., ``"T1"`` or ``("T1", "T2")``). If not provided,
-#     simulator only computes the forward pass.
+# 1. ``diff``: this is either a string or a tuple of strings containing the name of the parameter we want to calculate the derivatives (e.g., ``"T1"`` or ``("T1", "T2")``).
+#    If not provided, simulator only computes the forward pass.
+#
 # 2. ``chunk_size``: computation is vectorized in batches of size ``chunk_size``. The larger, the
 #    faster the computation is, but at expense of increased memory usage. At the moment, it must
 #    be tuned manually by the user. If not provided, attempt to process the whole batch.
@@ -151,7 +152,6 @@ model.set_sequence(flip=flip, TR=10.0)
 #
 # By contrast, ``sequence`` parameters will not be broadcasted, and are shared amongst all the atoms.
 #
-# %%
 # Running the simulation
 # ----------------------
 # After object instantiation and definition of object and sequence parameters, simulation can be executed by
@@ -159,11 +159,12 @@ model.set_sequence(flip=flip, TR=10.0)
 #
 signal, derivatives = model()
 
-# when using this method, all the parameters are automatically moved to the device specified
+# %%
+#
+# When using this method, all the parameters are automatically moved to the device specified
 # at object construction or, if this is not provided, to the same device as the first
 # argument of ``set_properties`` method (here, ``T1``).
 #
-# %%
 # Advanced Usage
 # --------------
 #
@@ -238,7 +239,6 @@ def mrf_sim(flip, TR, T1, T2, diff=None, device="cpu"):
 import numpy as np
 import matplotlib.pyplot as plt
 
-flip = np.linspace(5.0, 60.0, 1000)
 sig = mrf_sim(flip, 10.0, 1000.0, 100.0)
 
 plt.plot(abs(sig))
@@ -259,7 +259,7 @@ plt.ylabel("signal magnitude [a.u.]")
 #
 # ...as well as automatic differentiation controlled by ``diff`` argument:
 #
-sig, jac = mrf_sim(flip, 10.0, 100.0, 100.0, diff=("T1", "T2"))
+sig, jac = mrf_sim(flip, 10.0, 1000.0, 100.0, diff=("T1", "T2"))
 
 plt.plot(abs(jac.T))
 plt.xlabel("TR index")
