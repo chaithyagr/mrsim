@@ -68,14 +68,11 @@ class bSSFPModel(AbstractModel):
             Chemical shift in Hz, default is ``0.0``.
 
         """
-        self.properties.T1 = T1 * 1e-3
-        self.properties.T2 = T2 * 1e-3
+        self.properties.T1 = T1
+        self.properties.T2 = T2
         self.properties.M0 = M0
-
-        # We are assuming Freeman-Hill convention for off-resonance map,
-        # so we need to negate to make use with this Ernst-Anderson-based implementation from Hoff
-        self.properties.B0 = -2 * torch.pi * B0
-        self.properties.chemshift = 2 * torch.pi * chemshift
+        self.properties.B0 = B0
+        self.properties.chemshift = chemshift
 
     @autocast
     def set_sequence(
@@ -122,10 +119,14 @@ class bSSFPModel(AbstractModel):
         phase_inc: float = 180.0,
     ):
         # Prepare relaxation parameters
-        R1, R2 = 1 / T1, 1 / T2
+        R1, R2 = 1e3 / T1, 1e3 / T2
+
+        # We are assuming Freeman-Hill convention for off-resonance map,
+        # so we need to negate to make use with this Ernst-Anderson-based implementation from Hoff
+        B0 = -B0
 
         # Prepare off resonance
-        df = B0 + chemshift
+        df = 2 * torch.pi * (B0 + chemshift)
 
         # Divide-by-zero risk with PyTorch's nan_to_num
         E1 = torch.exp(-R1 * TR)

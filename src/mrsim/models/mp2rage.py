@@ -65,7 +65,7 @@ class MP2RAGEModel(AbstractModel):
             Inversion efficiency map, default is ``1.0``.
 
         """
-        self.properties.T1 = T1 * 1e-3
+        self.properties.T1 = T1
         self.properties.M0 = M0
         self.properties.inv_efficiency = inv_efficiency
 
@@ -121,7 +121,7 @@ class MP2RAGEModel(AbstractModel):
         M0: float | npt.ArrayLike = 1.0,
         inv_efficiency: float | npt.ArrayLike = 1.0,
     ):
-        R1 = 1 / T1
+        R1 = 1e3 / T1
 
         # Calculate number of shots before and after DC sampling
         nshots_bef = nshots[0]

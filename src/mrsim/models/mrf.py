@@ -72,8 +72,8 @@ class MRFModel(AbstractModel):
             Inversion efficiency map, default is ``1.0``.
 
         """
-        self.properties.T1 = T1 * 1e-3
-        self.properties.T2 = T2 * 1e-3
+        self.properties.T1 = T1
+        self.properties.T2 = T2
         self.properties.M0 = M0
         self.properties.B1 = B1
         self.properties.inv_efficiency = inv_efficiency
@@ -133,7 +133,7 @@ class MRFModel(AbstractModel):
         nreps: int = 1,
     ):
         # Prepare relaxation parameters
-        R1, R2 = 1 / T1, 1 / T2
+        R1, R2 = 1e3 / T1, 1e3 / T2
 
         # Prepare EPG states matrix
         states = epg.states_matrix(

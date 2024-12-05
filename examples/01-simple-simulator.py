@@ -46,8 +46,8 @@ class SSFPMRFModel(base.AbstractModel):
 
     @base.autocast
     def set_properties(self, T1, T2):
-        self.properties.T1 = T1 * 1e-3
-        self.properties.T2 = T2 * 1e-3
+        self.properties.T1 = T1
+        self.properties.T2 = T2
 
     @base.autocast
     def set_sequence(self, flip, TR):
@@ -57,7 +57,7 @@ class SSFPMRFModel(base.AbstractModel):
     @staticmethod
     def _engine(T1, T2, flip, TR):
         # Prepare relaxation parameters
-        R1, R2 = 1 / T1, 1 / T2
+        R1, R2 = 1e3 / T1, 1e3 / T2
 
         # Prepare EPG states matrix
         states = epg.states_matrix(
@@ -125,8 +125,7 @@ model = SSFPMRFModel(diff=("T1", "T2"))  # we use the defaults here
 # Here, we provide ``T1``, ``T2``, ``M0``. These can be either scalar or array-valued quantities (e.g., for a whole parameter map).
 # Input will be automatically converted to ``torch.Tensor`` and moved to the same device as the first argument (``T1``) thanks to ``base.autocast`` decorator.
 #
-# Other preprocessing such as unit conversions (e.g., ``ms to s``) must be performed manually by the user in this function.
-# After preprocessing, the arguments must be assigned to the ``properties`` attribute (``self.properties``).
+# In this method, the arguments must be assigned to the ``properties`` attribute (``self.properties``).
 #
 model.set_properties(T1=1000.0, T2=100.0)
 

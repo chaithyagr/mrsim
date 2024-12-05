@@ -108,20 +108,20 @@ def crlb_cost(flip, ESP, T1, T2):
 #
 
 
-def fse_finitediff_grad(flip, ESP, T1, T2, asnumpy=True):
+def fse_finitediff_grad(flip, ESP, T1, T2):
     sig = mrsim.fse_sim(flip=flip, ESP=ESP, T1=T1, T2=T2)
 
     # numerical derivative
     dt = 1.0
     dsig = mrsim.fse_sim(flip=flip, ESP=ESP, T1=T1, T2=T2 + dt)
 
-    return sig, (dsig - sig) / (dt * 1e-3)
+    return sig, (dsig - sig) / dt
 
 
 def _crlb_finitediff_cost(ESP, T1, T2, flip):
 
     # calculate signal and derivative
-    _, grad = fse_finitediff_grad(flip, ESP, T1, T2, asnumpy=False)
+    _, grad = fse_finitediff_grad(flip, ESP, T1, T2)
 
     # calculate cost
     return calculate_crlb(grad).cpu().detach().numpy()

@@ -70,8 +70,8 @@ class FSEModel(AbstractModel):
             Flip angle scaling map, default is ``1.0``.
 
         """
-        self.properties.T1 = T1 * 1e-3
-        self.properties.T2 = T2 * 1e-3
+        self.properties.T1 = T1
+        self.properties.T2 = T2
         self.properties.M0 = M0
         self.properties.B1 = B1
 
@@ -143,7 +143,7 @@ class FSEModel(AbstractModel):
         nstates: int = 10,
     ):
         # Prepare relaxation parameters
-        R1, R2 = 1 / T1, 1 / T2
+        R1, R2 = 1e3 / T1, 1e3 / T2
 
         # Prepare EPG states matrix
         states = epg.states_matrix(

@@ -68,7 +68,7 @@ class MPnRAGEModel(AbstractModel):
             Inversion efficiency map, default is ``1.0``.
 
         """
-        self.properties.T1 = T1 * 1e-3
+        self.properties.T1 = T1
         self.properties.M0 = M0
         self.properties.B1 = B1
         self.properties.inv_efficiency = inv_efficiency
@@ -120,7 +120,7 @@ class MPnRAGEModel(AbstractModel):
         slice_prof: float | npt.ArrayLike = 1.0,
     ):
         # Prepare relaxation parameters
-        R1 = 1 / T1
+        R1 = 1e3 / T1
 
         # Prepare EPG states matrix
         states = epg.states_matrix(
