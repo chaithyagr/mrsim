@@ -30,3 +30,8 @@ __all__.append("MPnRAGEModel")
 from .mp2rage import MP2RAGEModel  # noqa
 
 __all__.append("MP2RAGEModel")
+
+
+from .mprage import MPRAGEModel  # noqa
+
+__all__.append("MPRAGEModel")

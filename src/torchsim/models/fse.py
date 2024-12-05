@@ -15,7 +15,7 @@ class FSEModel(AbstractModel):
     """
     Fast Spin Echo (FSE) Model.
 
-    This class simulates fast spin echo (FSE) signals based on
+    This class models fast spin echo (FSE) signals based on
     tissue properties, pulse sequence parameters, and experimental conditions. It
     uses Extended Phase Graph (EPG) formalism to compute the magnetization evolution
     over time.

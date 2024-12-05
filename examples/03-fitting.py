@@ -25,23 +25,17 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
+import os
 import numpy as np
 import torchio as tio
 import torchsim
 
-
-try:
-    ixi_dataset = tio.datasets.IXI(
-        "/home/mcencini/ixi/",
-        modalities=("PD", "T1", "T2"),
-        download=False,
-    )
-except:
-    ixi_dataset = tio.datasets.IXI(
-        "$HOME/.ixi/",
-        modalities=("PD", "T1", "T2"),
-        download=True,
-    )
+path = os.path.realpath("data")
+ixi_dataset = tio.datasets.IXI(
+    path,
+    modalities=("PD", "T2"),
+    download=False,
+)
 
 # get subject 0
 sample_subject = ixi_dataset[0]

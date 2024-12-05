@@ -15,7 +15,7 @@ class MRFModel(AbstractModel):
     """
     SSFP Magnetic Resonance Fingerprinting (MRF) Model.
 
-    This class simulates steady-state free precession (SSFP) MRF signals based on
+    This class models steady-state free precession (SSFP) MRF signals based on
     tissue properties, pulse sequence parameters, and experimental conditions. It
     uses Extended Phase Graph (EPG) formalism to compute the magnetization evolution
     over time.

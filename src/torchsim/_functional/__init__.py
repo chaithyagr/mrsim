@@ -17,6 +17,11 @@ from ._mp2rage import mp2rage_sim  # noqa
 __all__.append("mp2rage_sim")
 
 
+from ._mprage import mprage_sim  # noqa
+
+__all__.append("mprage_sim")
+
+
 from ._fse import fse_sim  # noqa
 
 __all__.append("fse_sim")

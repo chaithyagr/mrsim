@@ -124,6 +124,7 @@ Iterative
    :nosignatures:  
    
    torchsim.models.FSEModel
+   torchsim.models.MPRAGEModel
    torchsim.models.MP2RAGEModel
    torchsim.models.MPnRAGEModel
    torchsim.models.MRFModel
@@ -150,6 +151,7 @@ Iterative
    :nosignatures:  
    
    torchsim.fse_sim
+  torchsim.mprage_sim
    torchsim.mp2rage_sim
    torchsim.mpnrage_sim
    torchsim.mrf_sim

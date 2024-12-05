@@ -15,7 +15,7 @@ class MPnRAGEModel(AbstractModel):
     """
     Magnetization Prepared (n) RApid Gradient Echo (MPnRAGE) Model.
 
-    This class Magnetization Prepared RApid Gradient Echo with n volumes per segment
+    This class models Magnetization Prepared RApid Gradient Echo with n volumes per segment
     (MPnRAGE) signals based on tissue properties, pulse sequence parameters,
     and experimental conditions. It uses Extended Phase Graph (EPG) formalism
     to compute the magnetization evolution over time.

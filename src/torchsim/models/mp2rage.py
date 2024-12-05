@@ -13,7 +13,7 @@ class MP2RAGEModel(AbstractModel):
     """
     Magnetization Prepared (2) RApid Gradient Echo (MPnRAGE) Model.
 
-    This class Magnetization Prepared RApid Gradient Echo with 2 volumes per segment
+    This class models Magnetization Prepared RApid Gradient Echo with 2 volumes per segment
     (MP2RAGE) signals based on tissue properties, pulse sequence parameters,
     and experimental conditions. It uses Extended Phase Graph (EPG) formalism
     to compute the magnetization evolution over time.
@@ -28,9 +28,8 @@ class MP2RAGEModel(AbstractModel):
     set_sequence(nshots, flip, TR, TI=0.0)
         Configures the pulse sequence parameters for the simulation.
 
-    _engine(T1, TI, flip, TRspgr, TRmp2rage, nshots, M0=1.0, inv_efficiency=1.0,
-            slice_prof=1.0)
-        Computes the MPnRAGE signal for given tissue properties and sequence parameters.
+    _engine(T1, TI, flip, TRspgr, TRmp2rage, nshots, M0=1.0, inv_efficiency=1.0)
+        Computes the MP2RAGE signal for given tissue properties and sequence parameters.
 
     Examples
     --------
