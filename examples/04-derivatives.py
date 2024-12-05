@@ -6,10 +6,18 @@ Automatic differentiation
 This example showcase the automatic differentiation capabilities
 of the framework.
 
-First, we will import the required packages:
-    
 """
 
+# %%
+# .. colab-link::
+#    :needs_gpu: 0
+#
+#    !pip install mrsim
+
+# %%
+#
+# First, we will import the required packages:
+#
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -72,10 +80,10 @@ def calculate_crlb(grad, W=None, weight=1.0):
 #
 
 
-def _crlb_cost(ESP, T1, T2, phases, flip):
+def _crlb_cost(ESP, T1, T2, flip):
 
     # calculate signal and derivative
-    _, grad = mrsim.fse_sim(flip=flip, phases=phases, ESP=ESP, T1=T1, T2=T2, diff="T2")
+    _, grad = mrsim.fse_sim(flip=flip, ESP=ESP, T1=T1, T2=T2, diff="T2")
 
     # calculate cost
     return calculate_crlb(grad)
@@ -85,11 +93,8 @@ def crlb_cost(flip, ESP, T1, T2):
     flip = torch.as_tensor(flip, dtype=torch.float32)
     flip.requires_grad = True
 
-    # phases
-    phases = torch.zeros_like(flip)
-
     # get partial function
-    _cost = partial(_crlb_cost, ESP, T1, T2, phases)
+    _cost = partial(_crlb_cost, ESP, T1, T2)
     _dcost = jacrev(_cost)
 
     return _cost(flip).detach().cpu().numpy(), _dcost(flip).detach().cpu().numpy()
@@ -103,20 +108,20 @@ def crlb_cost(flip, ESP, T1, T2):
 #
 
 
-def fse_finitediff_grad(flip, phases, ESP, T1, T2, asnumpy=True):
-    sig = mrsim.fse_sim(flip=flip, phases=phases, ESP=ESP, T1=T1, T2=T2)
+def fse_finitediff_grad(flip, ESP, T1, T2, asnumpy=True):
+    sig = mrsim.fse_sim(flip=flip, ESP=ESP, T1=T1, T2=T2)
 
     # numerical derivative
     dt = 1.0
-    dsig = mrsim.fse_sim(flip=flip, phases=phases, ESP=ESP, T1=T1, T2=T2 + dt)
+    dsig = mrsim.fse_sim(flip=flip, ESP=ESP, T1=T1, T2=T2 + dt)
 
-    return sig, (dsig - sig) / dt
+    return sig, (dsig - sig) / (dt * 1e-3)
 
 
-def _crlb_finitediff_cost(ESP, T1, T2, phases, flip):
+def _crlb_finitediff_cost(ESP, T1, T2, flip):
 
     # calculate signal and derivative
-    _, grad = fse_finitediff_grad(flip, phases, ESP, T1, T2, asnumpy=False)
+    _, grad = fse_finitediff_grad(flip, ESP, T1, T2, asnumpy=False)
 
     # calculate cost
     return calculate_crlb(grad).cpu().detach().numpy()
@@ -125,16 +130,16 @@ def _crlb_finitediff_cost(ESP, T1, T2, phases, flip):
 def crlb_finitediff_cost(flip, ESP, T1, T2):
 
     # initial cost
-    cost0 = _crlb_finitediff_cost(ESP, T1, T2, 0 * flip, flip)
+    cost0 = _crlb_finitediff_cost(ESP, T1, T2, flip)
     dcost = []
 
     for n in range(len(flip)):
         # get angles
         angles = flip.copy()
         angles[n] += 1.0
-        dcost.append(_crlb_finitediff_cost(ESP, T1, T2, 0 * angles, angles))
+        dcost.append(_crlb_finitediff_cost(ESP, T1, T2, angles))
 
-    return cost0, np.asarray(dcost) - cost0
+    return cost0, (np.asarray(dcost) - cost0)
 
 
 # %%
@@ -151,68 +156,65 @@ t2 = 100.0
 # Let's compute CRLB for a constant 180.0 refocusing schedule, preceded by
 # a ramp:
 #
-angles = np.concatenate(
-    (np.linspace(0, 180.0, 36), np.ones(60, dtype=np.float32) * 180.0)
-)
+angles = np.ones(96) * 60.0
 esp = 5.0  # ms
 
 # %%
 #
 # Run and plot timings:
 #
-t0 = time.time()
-sig0, grad0 = fse_finitediff_grad(angles, 0 * angles, esp, t1, t2)
-t1 = time.time()
-tgrad0 = t1 - t0
+tstart = time.time()
+sig0, grad0 = fse_finitediff_grad(angles, esp, t1, t2)
+tstop = time.time()
+tgrad0 = tstop - tstart
 
-t0 = time.time()
-sig, grad = mrsim.fse_sim(
-    flip=angles, phases=0 * angles, ESP=esp, T1=t1, T2=t2, diff="T2"
-)
-t1 = time.time()
-tgrad = t1 - t0
+tstart = time.time()
+sig, grad = mrsim.fse_sim(flip=angles, ESP=esp, T1=t1, T2=t2, diff="T2")
+tstop = time.time()
+tgrad = tstop - tstart
 
 # cost and derivative
-t0 = time.time()
+tstart = time.time()
 cost0, dcost0 = crlb_finitediff_cost(angles, esp, t1, t2)
-t1 = time.time()
-tcost0 = t1 - t0
+tstop = time.time()
+tcost0 = tstop - tstart
 
-t0 = time.time()
+tstart = time.time()
 cost, dcost = crlb_cost(angles, esp, t1, t2)
-t1 = time.time()
-tcost = t1 - t0
+tstop = time.time()
+tcost = tstop - tstart
 
 fsz = 10
 plt.figure()
-plt.subplot(2, 2, 1)
+plt.subplot(4, 1, 1)
 plt.rcParams.update({"font.size": 0.5 * fsz})
 plt.plot(angles, ".")
 plt.xlabel("Echo #", fontsize=fsz)
 plt.xlim([-1, 97])
 plt.ylabel("Flip Angle [deg]", fontsize=fsz)
 
-plt.subplot(2, 2, 2)
+plt.subplot(4, 1, 2)
 plt.rcParams.update({"font.size": 0.5 * fsz})
 plt.plot(abs(grad), "-k"), plt.plot(abs(grad0), "*r")
 plt.xlabel("Echo #", fontsize=fsz)
 plt.xlim([-1, 97])
 plt.ylabel(r"$\frac{\partial signal}{\partial T2}$ [a.u.]", fontsize=fsz)
-plt.legend(["Finite Diff", "Auto Diff"])
+plt.legend(
+    [
+        "Auto Diff",
+        "Finite Diff",
+    ]
+)
 
-
-plt.subplot(2, 2, 3)
+plt.subplot(4, 1, 3)
 plt.rcParams.update({"font.size": 0.5 * fsz})
 plt.plot(abs(dcost), "-k"), plt.plot(abs(dcost0), "*r")
 plt.xlabel("Echo #", fontsize=fsz)
 plt.xlim([-1, 97])
 plt.ylabel(r"$\frac{\partial CRLB}{\partial FA}$ [a.u.]", fontsize=fsz)
-plt.legend(["Finite Diff", "Auto Diff"])
+plt.legend(["Auto Diff", "Finite Diff"])
 
-plt.subplot(2, 2, 4)
-
-# define labels
-# plot results
+plt.subplot(4, 1, 4)
 labels = ["derivative of signal", "CRLB objective gradient"]
 time_finite = [round(tgrad0, 2), round(tcost0, 2)]
 time_auto = [round(tgrad, 2), round(tcost, 2)]
@@ -229,3 +231,4 @@ plt.legend()
 
 plt.bar_label(rects1, padding=3, fontsize=fsz)
 plt.bar_label(rects2, padding=3, fontsize=fsz)
+plt.tight_layout()

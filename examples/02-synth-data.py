@@ -7,13 +7,19 @@ This example shows how to use MRSim to generate synthetic data.
 
 We will use torchio and sigpy to get realistic ground truth maps and
 coil sensitivities. These can be installed as:
+    
+``pip install torchio``
+``pip install sigpy``
 
 """
 
 # %%
+# .. colab-link::
+#    :needs_gpu: 0
 #
-# ``pip install torchio``
-# ``pip install sigpy``
+#    !pip install mrsim torchio sigpy
+
+# %%
 #
 # We will use realistic maps from the IXI dataset,
 # downloaded using ``torchio``:
@@ -66,14 +72,11 @@ T2 = np.flip(T2)
 import mrsim
 
 
-def simulate(T2, flip, ESP, phases=None, device="cpu"):
-    if phases is None:
-        phases = -np.ones_like(flip) * 90.0
-
+def simulate(T2, flip, ESP, device="cpu"):
     # get ishape
     ishape = T2.shape
     output = mrsim.fse_sim(
-        flip=flip, phases=phases, ESP=ESP, T1=1000.0, T2=T2.flatten(), device=device
+        flip=flip, ESP=ESP, T1=1000.0, T2=T2.flatten(), device=device
     )
 
     return output.T.reshape(-1, *ishape).numpy(force=True)

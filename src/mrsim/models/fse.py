@@ -25,7 +25,7 @@ class FSEModel(AbstractModel):
     set_properties(T1, T2, M0=1.0, B1=1.0)
         Sets tissue relaxation properties and experimental conditions.
 
-    set_sequence(flip, ESP, phases=90.0, TR=1e6, exc_flip=90.0, exc_phase=90.0,
+    set_sequence(flip, ESP, phases=0.0, TR=1e6, exc_flip=90.0, exc_phase=90.0,
                  slice_prof=1.0, nstates=10)
         Configures the pulse sequence parameters for the simulation.
 
@@ -80,7 +80,7 @@ class FSEModel(AbstractModel):
         self,
         flip: float | npt.ArrayLike,
         ESP: float,
-        phases: float | npt.ArrayLike = 90.0,
+        phases: float | npt.ArrayLike = 0.0,
         TR: float | npt.ArrayLike = 1e6,
         exc_flip: float = 90.0,
         exc_phase: float = 90.0,
@@ -133,7 +133,7 @@ class FSEModel(AbstractModel):
         T2: float | npt.ArrayLike,
         flip: float | npt.ArrayLike,
         ESP: float | npt.ArrayLike,
-        phases: float | npt.ArrayLike = 90.0,
+        phases: float | npt.ArrayLike = 0.0,
         exc_flip: float = 90.0,
         exc_phase: float = 90.0,
         TR: float | npt.ArrayLike = 1e6,

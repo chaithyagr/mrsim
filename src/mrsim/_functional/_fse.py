@@ -13,7 +13,7 @@ def fse_sim(
     ESP: float,
     T1: float | npt.ArrayLike,
     T2: float | npt.ArrayLike,
-    phases: float | npt.ArrayLike = 90.0,
+    phases: float | npt.ArrayLike = 0.0,
     TR: float | npt.ArrayLike = 1e6,
     exc_flip: float = 90.0,
     exc_phase: float = 90.0,
@@ -45,7 +45,7 @@ def fse_sim(
         The default is ``90.0``.
     exc_phase : float, optional
         Excitation flip angle phase in degrees.
-        The default is ``90.0``.
+        The default is ``0.0``.
     T1 : float | npt.ArrayLike
         Longitudinal relaxation time in milliseconds.
     T2 : float | npt.ArrayLike

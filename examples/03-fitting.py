@@ -6,13 +6,17 @@ Parameter Fitting
 This example shows how to use MRSim to perform parameter inference.
 
 We will build on the previous example. We will use ``numba``, which can 
-be installed as:
+be installed as ``pip install numba``
 
 """
 
 # %%
+# .. colab-link::
+#    :needs_gpu: 0
 #
-# ``pip install numba``
+#    !pip install mrsim torchio sigpy
+
+# %%
 #
 # We'll generate an FSE dataset from IXI database.
 # We will neglect encoding and assume single coil for this case.
@@ -49,14 +53,11 @@ M0 = np.flip(M0)
 T2 = np.flip(T2)
 
 
-def simulate(T2, flip, ESP, phases=None, device="cpu"):
-    if phases is None:
-        phases = -np.ones_like(flip) * 90.0
-
+def simulate(T2, flip, ESP, device="cpu"):
     # get ishape
     ishape = T2.shape
     output = mrsim.fse_sim(
-        flip=flip, phases=phases, ESP=ESP, T1=1000.0, T2=T2.flatten(), device=device
+        flip=flip, ESP=ESP, T1=1000.0, T2=T2.flatten(), device=device
     )
 
     return abs(output.T.reshape(-1, *ishape)).numpy(force=True)

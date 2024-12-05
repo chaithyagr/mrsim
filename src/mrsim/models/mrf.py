@@ -175,4 +175,4 @@ class MRFModel(AbstractModel):
                 states = epg.transverse_relaxation(states, E2)
                 states = epg.shift(states)
 
-        return M0 * torch.stack(signal)
+        return M0 * 1j * torch.stack(signal)

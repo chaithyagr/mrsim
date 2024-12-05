@@ -10,11 +10,19 @@ First, we want to implement the simulation engine.
 Parallelization and automatic differentiation are abstracted
 away from the user, which can focus on implementing single-voxel
 simulation.
-
-We begin with the necessary imports:
     
 """
 
+# %%
+# .. colab-link::
+#    :needs_gpu: 0
+#
+#    !pip install mrsim
+
+# %%
+#
+# We begin with the necessary imports:
+#
 import warnings
 
 warnings.filterwarnings("ignore")
