@@ -30,11 +30,18 @@ import torchio as tio
 import torchsim
 
 
-ixi_dataset = tio.datasets.IXI(
-    "/home/mcencini//ixi/",
-    modalities=("PD", "T1", "T2"),
-    download=False,
-)
+try:
+    ixi_dataset = tio.datasets.IXI(
+        "/home/mcencini/ixi/",
+        modalities=("PD", "T1", "T2"),
+        download=False,
+    )
+except:
+    ixi_dataset = tio.datasets.IXI(
+        "$HOME/.ixi/",
+        modalities=("PD", "T1", "T2"),
+        download=True,
+    )
 
 # get subject 0
 sample_subject = ixi_dataset[0]
