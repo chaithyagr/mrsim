@@ -1,316 +1,236 @@
-"""
-Test EPG relaxation operators.
+"""Test relaxation operators."""
 
-Tested operators:
-    - Relaxation (Transverse and Longitudinal) without Exchange
-    - Relaxation (Transverse and Longitudinal) with Exchange
-
-"""
-
-import itertools
-
-import pytest
 import torch
+from types import SimpleNamespace
 
-from mrsim.epg import ops
-from mrsim.epg.ops import EPGstates
-
-# test values
-time = [0.0, 10.0, 1000000.0]
-nstates = [1, 2]
-nlocations = [1, 2]
-device = ["cpu"]
-
-if torch.cuda.is_available():
-    device += ["cuda:0"]
+from mrsim import epg
 
 
-@pytest.mark.parametrize(
-    "device, nstates, nlocations, time",
-    list(itertools.product(*[device, nstates, nlocations, time])),
-)
-def test_free_precession(device, nstates, nlocations, time):
-    """
-    Test free precession in absence of exchange.
-    """
-    # define
-    T1 = 1000.0
-    T2 = 100.0
+# %% longitudinal
+def test_longitudinal_relaxation_op():
+    R1 = torch.tensor(0.5)
+    time = torch.tensor(2.0)
+    E1, rE1 = epg.longitudinal_relaxation_op(R1, time)
 
-    # initialize
-    states = EPGstates(device, 1, nstates, nlocations, 1, 1)["states"]
-    states["F"] = states["F"]["real"][0] + 1j * states["F"]["imag"][0]
-    states["Z"] = states["Z"]["real"][0] + 1j * states["Z"]["imag"][0]
-    pulse = ops.RFPulse(device, alpha=30.0)
-    eps = ops.Relaxation(device, time, T1, T2)
+    # Expected results
+    expected_E1 = torch.exp(-R1 * time)
+    expected_rE1 = 1 - expected_E1
 
-    # prepare
-    states = pulse(states)
-    states = eps(states)
+    assert torch.allclose(E1, expected_E1, atol=1e-6)
+    assert torch.allclose(rE1, expected_rE1, atol=1e-6)
 
-    # expected
-    F = torch.zeros((nstates, nlocations, 1, 2), dtype=torch.complex64, device=device)
-    if time == 10.0:
-        F[0, ..., 0] = -1j * 0.4524
-        F[0, ..., 1] = 1j * 0.4524
-    elif time == 0.0:
-        F[0, ..., 0] = -1j * 0.5000
-        F[0, ..., 1] = 1j * 0.5000
+    # Test with batch inputs
+    R1_batch = torch.tensor([0.5, 1.0])
+    time_batch = torch.tensor([2.0, 3.0])
+    E1_batch, rE1_batch = epg.longitudinal_relaxation_op(R1_batch, time_batch)
 
-    Z = torch.zeros((nstates, nlocations, 1), dtype=torch.complex64, device=device)
-    if time == 10.0:
-        Z[0, ...] = 0.8674
-    elif time == 0.0:
-        Z[0, ...] = 0.8660
-    else:
-        Z[0, ...] = 1.0
+    expected_E1_batch = torch.exp(-R1_batch * time_batch)
+    expected_rE1_batch = 1 - expected_E1_batch
 
-    # assertions
-    assert torch.allclose(states["F"], F, atol=1e-4)
-    assert torch.allclose(states["Z"], Z, atol=1e-4)
+    assert torch.allclose(E1_batch, expected_E1_batch, atol=1e-6)
+    assert torch.allclose(rE1_batch, expected_rE1_batch, atol=1e-6)
 
 
-@pytest.mark.parametrize(
-    "device, nstates, nlocations, time",
-    list(itertools.product(*[device, nstates, nlocations, time])),
-)
-def test_free_precession_mt(device, nstates, nlocations, time):
-    """
-    Test free precession in presence of magnetization transfer.
-    """
-    # define
-    T1 = 779
-    T2 = 45
-    weight = torch.as_tensor([0.883, 0.117], dtype=torch.float32, device=device)
-    k = torch.tensor([36.75], dtype=torch.float32, device=device)
+def test_longitudinal_relaxation_exchange_op():
+    weight = torch.tensor([0.5, 0.5])
+    k = torch.tensor([[0, 0.2], [0.1, 0]])
+    R1 = torch.tensor([0.5, 1.0])
+    time = torch.tensor(2.0)
+    E1, rE1 = epg.longitudinal_relaxation_exchange_op(weight, k, R1, time)
 
-    # rf
-    alpha = 30.0
+    # Shape validation
+    assert E1.shape == k.shape
+    assert rE1.shape == weight.shape
 
-    # pulse stats
-    b1rms = 13 / (torch.pi / 180.0 * alpha)
-    duration = torch.pi / 180.0 * alpha / (267.5221 * 1e-3 * 13)  # [ms]
+    # Numerical correctness can be tested with precomputed values or expected behavior
+    assert E1.dtype == torch.complex64
+    assert rE1.dtype == torch.complex64
 
-    # initialize
-    states = EPGstates(device, 1, nstates, nlocations, 1, 1, weight, "mt")["states"]
-    states["F"] = states["F"]["real"][0] + 1j * states["F"]["imag"][0]
-    states["Z"] = states["Z"]["real"][0] + 1j * states["Z"]["imag"][0]
-    states["Zbound"] = states["Zbound"]["real"][0] + 1j * states["Zbound"]["imag"][0]
-    pulse = ops.RFPulse(device, alpha=alpha, b1rms=b1rms, duration=duration)
-    eps = ops.Relaxation(device, time, T1, T2, weight, k)
-
-    # prepare
-    states = pulse(states)
-    states = eps(states)
-
-    # expected
-    F = torch.zeros((nstates, nlocations, 1, 2), dtype=torch.complex64, device=device)
-    if time == 10.0:
-        F[0, ..., 0, 0] = -1j * 0.3535
-        F[0, ..., 0, 1] = 1j * 0.3535
-    elif time == 0.0:
-        F[0, ..., 0] = -1j * 0.4415
-        F[0, ..., 1] = 1j * 0.4415
-
-    Z = torch.zeros((nstates, nlocations, 1), dtype=torch.complex64, device=device)
-    if time == 10.0:
-        Z[0, ..., 0] = 0.7678
-    elif time == 0.0:
-        Z[0, ..., 0] = 0.7647
-    else:
-        Z[0, ..., 0] = 0.883
-
-    Zbound = torch.zeros((nstates, nlocations, 1), dtype=torch.complex64, device=device)
-    if time == 10.0:
-        Zbound[0, ..., 0] = 0.1058
-    elif time == 0.0:
-        Zbound[0, ..., 0] = 0.1072
-    else:
-        Zbound[0, ..., 0] = 0.117
-
-    # assertions
-    assert torch.allclose(states["F"], F, atol=1e-4)
-    assert torch.allclose(states["Z"], Z, atol=1e-4)
-    assert torch.allclose(states["Zbound"], Zbound, atol=1e-4)
-
-
-@pytest.mark.parametrize(
-    "device, nstates, nlocations, time",
-    list(itertools.product(*[device, nstates, nlocations, time])),
-)
-def test_free_precession_exchange(device, nstates, nlocations, time):
-    """
-    Test free precession in presence of exchange.
-    """
-    # define
-    T1 = torch.as_tensor([1000.0, 500.0], dtype=torch.float32, device=device)
-    T2 = torch.as_tensor([100.0, 20.0], dtype=torch.float32, device=device)
-    weight = torch.as_tensor([0.8, 0.2], dtype=torch.float32, device=device)
-    k = torch.tensor([10.0], dtype=torch.float32, device=device)
-
-    # initialize
-    states = EPGstates(device, 1, nstates, nlocations, 1, 2, weight)["states"]
-    states["F"] = states["F"]["real"][0] + 1j * states["F"]["imag"][0]
-    states["Z"] = states["Z"]["real"][0] + 1j * states["Z"]["imag"][0]
-    pulse = ops.RFPulse(device, alpha=30.0)
-    eps = ops.Relaxation(device, time, T1, T2, weight, k)
-
-    # prepare
-    states = pulse(states)
-    states = eps(states)
-
-    # expected
-    F = torch.zeros((nstates, nlocations, 2, 2), dtype=torch.complex64, device=device)
-    if time == 10.0:
-        F[0, ..., 0, 0] = -1j * 0.3607
-        F[0, ..., 0, 1] = 1j * 0.3607
-        F[0, ..., 1, 0] = -1j * 0.0617
-        F[0, ..., 1, 1] = 1j * 0.0617
-    elif time == 0.0:
-        F[0, ..., 0, 0] = -1j * 0.4
-        F[0, ..., 0, 1] = 1j * 0.4
-        F[0, ..., 1, 0] = -1j * 0.1
-        F[0, ..., 1, 1] = 1j * 0.1
-
-    Z = torch.zeros((nstates, nlocations, 2), dtype=torch.complex64, device=device)
-    if time == 10.0:
-        Z[0, ..., 0] = 0.6939
-        Z[0, ..., 1] = 0.1737
-    elif time == 0.0:
-        Z[0, ..., 0] = 0.6928
-        Z[0, ..., 1] = 0.1732
-    else:
-        Z[0, ..., 0] = 0.8
-        Z[0, ..., 1] = 0.2
-
-    # assertions
-    assert torch.allclose(states["F"], F, atol=1e-4)
-    assert torch.allclose(states["Z"], Z, atol=1e-4)
-
-
-@pytest.mark.parametrize(
-    "device, nstates, nlocations, time",
-    list(itertools.product(*[device, nstates, nlocations, time])),
-)
-def test_free_precession_exchange_chemshift(device, nstates, nlocations, time):
-    """
-    Test free precession in presence of chemical shift and exchange.
-    """
-    # define
-    T1 = torch.as_tensor([1000.0, 500.0], dtype=torch.float32, device=device)
-    T2 = torch.as_tensor([100.0, 20.0], dtype=torch.float32, device=device)
-    weight = torch.as_tensor([0.8, 0.2], dtype=torch.float32, device=device)
-    chemshift = torch.as_tensor([0.0, 15.0], dtype=torch.float32, device=device)  # [Hz]
-    k = torch.tensor([10.0], dtype=torch.float32, device=device)
-
-    # initialize
-    states = EPGstates(device, 1, nstates, nlocations, 1, 2, weight)["states"]
-    states["F"] = states["F"]["real"][0] + 1j * states["F"]["imag"][0]
-    states["Z"] = states["Z"]["real"][0] + 1j * states["Z"]["imag"][0]
-    pulse = ops.RFPulse(device, alpha=30.0)
-    eps = ops.Relaxation(device, time, T1, T2, weight, k, chemshift)
-
-    # prepare
-    states = pulse(states)
-    states = eps(states)
-
-    # expected
-    F = torch.zeros((nstates, nlocations, 2, 2), dtype=torch.complex64, device=device)
-    if time == 10.0:
-        F[0, ..., 0, 0] = -0.0024 - 1j * 0.3600
-        F[0, ..., 0, 1] = -0.0024 + 1j * 0.3600
-        F[0, ..., 1, 0] = -0.0476 - 1j * 0.0379
-        F[0, ..., 1, 1] = -0.0476 + 1j * 0.0379
-    elif time == 0.0:
-        F[0, ..., 0, 0] = -1j * 0.4
-        F[0, ..., 0, 1] = 1j * 0.4
-        F[0, ..., 1, 0] = -1j * 0.1
-        F[0, ..., 1, 1] = 1j * 0.1
-
-    Z = torch.zeros((nstates, nlocations, 2), dtype=torch.complex64, device=device)
-    if time == 10.0:
-        Z[0, ..., 0] = 0.6939
-        Z[0, ..., 1] = 0.1737
-    elif time == 0.0:
-        Z[0, ..., 0] = 0.6928
-        Z[0, ..., 1] = 0.1732
-    else:
-        Z[0, ..., 0] = 0.8
-        Z[0, ..., 1] = 0.2
-
-    # assertions
-    assert torch.allclose(states["F"], F, atol=1e-4)
-    assert torch.allclose(states["Z"], Z, atol=1e-4)
-
-
-@pytest.mark.parametrize(
-    "device, nstates, nlocations, time",
-    list(itertools.product(*[device, nstates, nlocations, time])),
-)
-def test_free_precession_moving(device, nstates, nlocations, time):
-    """
-    Test free precession in absence of moving spins.
-    """
-    # define
-    T1 = 1000.0
-    T2 = 100.0
-
-    # initialize
-    states = EPGstates(device, 1, nstates, nlocations, 1, 1, moving=True)["states"]
-    states["F"] = states["F"]["real"][0] + 1j * states["F"]["imag"][0]
-    states["Z"] = states["Z"]["real"][0] + 1j * states["Z"]["imag"][0]
-    states["moving"]["F"] = (
-        states["moving"]["F"]["real"][0] + 1j * states["moving"]["F"]["imag"][0]
+    # Check with zero exchange rate
+    k_zero = torch.zeros_like(k)
+    E1_zero, rE1_zero = epg.longitudinal_relaxation_exchange_op(
+        weight, k_zero, R1, time
     )
-    states["moving"]["Z"] = (
-        states["moving"]["Z"]["real"][0] + 1j * states["moving"]["Z"]["imag"][0]
+    expected_E1_zero, expected_rE1_zero = epg.longitudinal_relaxation_op(R1, time)
+
+    assert torch.allclose(torch.diag(E1_zero.real), expected_E1_zero, atol=1e-6)
+    assert torch.allclose(rE1_zero.real, weight * expected_rE1_zero, atol=1e-6)
+
+
+def test_longitudinal_relaxation():
+    Z = torch.tensor([1.0, 0.5])[None, :]
+    states = SimpleNamespace(Z=Z.clone())
+    E1 = torch.tensor(0.8)
+    rE1 = torch.tensor(0.2)
+
+    updated_states = epg.longitudinal_relaxation(states, E1, rE1)
+
+    # Expected results
+    expected_Z = Z.clone() * E1
+    expected_Z[0] += rE1
+
+    assert torch.allclose(updated_states.Z, expected_Z, atol=1e-6)
+
+
+def test_longitudinal_relaxation_exchange():
+    Z = torch.tensor([1.0, 0.5])[None, :]
+    states = SimpleNamespace(Z=Z.clone())
+    E1 = torch.tensor([[0.8, 0.1], [0.2, 0.9]])
+    rE1 = torch.tensor([0.2, 0.1])
+
+    updated_states = epg.longitudinal_relaxation_exchange(states, E1, rE1)
+
+    # Expected results
+    expected_Z = torch.einsum("...ij,...j->...i", E1, Z.clone())
+    expected_Z[0] += rE1
+
+    assert torch.allclose(updated_states.Z, expected_Z, atol=1e-6)
+
+
+def test_longitudinal_edge_cases():
+    # Test with zero R1
+    R1_zero = torch.tensor(0.0)
+    time = torch.tensor(1.0)
+    E1, rE1 = epg.longitudinal_relaxation_op(R1_zero, time)
+
+    assert torch.allclose(E1, torch.tensor(1.0), atol=1e-6)
+    assert torch.allclose(rE1, torch.tensor(0.0), atol=1e-6)
+
+    # Test with zero time
+    R1 = torch.tensor(0.5)
+    time_zero = torch.tensor(0.0)
+    E1, rE1 = epg.longitudinal_relaxation_op(R1, time_zero)
+
+    assert torch.allclose(E1, torch.tensor(1.0), atol=1e-6)
+    assert torch.allclose(rE1, torch.tensor(0.0), atol=1e-6)
+
+    # Test with large time (approaching steady-state)
+    large_time = torch.tensor(1e6)
+    E1, rE1 = epg.longitudinal_relaxation_op(R1, large_time)
+
+    assert torch.allclose(E1, torch.tensor(0.0), atol=1e-6)
+    assert torch.allclose(rE1, torch.tensor(1.0), atol=1e-6)
+
+
+# %% transverse
+def test_transverse_relaxation_op():
+    R2 = torch.tensor(0.5)
+    time = torch.tensor(2.0)
+    E2 = epg.transverse_relaxation_op(R2, time)
+
+    # Expected results
+    expected_E2 = torch.exp(-R2 * time)
+
+    assert torch.allclose(E2, expected_E2, atol=1e-6)
+
+    # Test with batch inputs
+    R2_batch = torch.tensor([0.5, 1.0])
+    time_batch = torch.tensor([2.0, 3.0])
+    E2_batch = epg.transverse_relaxation_op(R2_batch, time_batch)
+
+    expected_E2_batch = torch.exp(-R2_batch * time_batch)
+
+    assert torch.allclose(E2_batch, expected_E2_batch, atol=1e-6)
+
+
+def test_transverse_relaxation_exchange_op():
+    k = torch.tensor([[0, 0.2], [0.1, 0]])
+    R2 = torch.tensor([0.5, 1.0])
+    time = torch.tensor(2.0)
+    df = torch.tensor([10.0, 20.0])  # Chemical shifts
+    E2 = epg.transverse_relaxation_exchange_op(k, R2, time, df)
+
+    # Shape validation
+    assert E2.shape == k.shape
+
+    # Numerical correctness can be tested against known results or expected behavior
+    assert E2.dtype == torch.complex64
+
+    # Test with zero exchange rate and zero frequency offset
+    k_zero = torch.zeros_like(k)
+    df_zero = torch.zeros_like(df)
+    E2_zero = epg.transverse_relaxation_exchange_op(k_zero, R2, time, df_zero)
+    expected_E2_zero = torch.exp(-R2 * time)
+
+    assert torch.allclose(torch.diag(E2_zero.real), expected_E2_zero, atol=1e-6)
+    assert torch.allclose(
+        torch.diag(E2_zero.imag), torch.zeros_like(E2_zero.imag), atol=1e-6
     )
-    pulse = ops.RFPulse(device, alpha=30.0, slice_selective=False)
-    eps = ops.Relaxation(device, time, T1, T2)
 
-    # prepare
-    states = pulse(states)
-    states = eps(states)
 
-    # expected
-    F = torch.zeros((nstates, nlocations, 1, 2), dtype=torch.complex64, device=device)
-    if time == 10.0:
-        F[0, ..., 0] = -1j * 0.4524
-        F[0, ..., 1] = 1j * 0.4524
-    elif time == 0.0:
-        F[0, ..., 0] = -1j * 0.5000
-        F[0, ..., 1] = 1j * 0.5000
-
-    Z = torch.zeros((nstates, nlocations, 1), dtype=torch.complex64, device=device)
-    if time == 10.0:
-        Z[0, ...] = 0.8674
-    elif time == 0.0:
-        Z[0, ...] = 0.8660
-    else:
-        Z[0, ...] = 1.0
-
-    Fmoving = torch.zeros(
-        (nstates, nlocations, 1, 2), dtype=torch.complex64, device=device
+def test_transverse_relaxation():
+    states = SimpleNamespace(
+        Fplus=torch.tensor([1.0, 0.5]), Fminus=torch.tensor([0.8, 0.4])
     )
-    if time == 10.0:
-        Fmoving[0, ..., 0] = -1j * 0.4524
-        Fmoving[0, ..., 1] = 1j * 0.4524
-    elif time == 0.0:
-        Fmoving[0, ..., 0] = -1j * 0.5000
-        Fmoving[0, ..., 1] = 1j * 0.5000
+    E2 = torch.tensor(0.8)
 
-    Zmoving = torch.zeros(
-        (nstates, nlocations, 1), dtype=torch.complex64, device=device
-    )
-    if time == 10.0:
-        Zmoving[0, ...] = 0.8674
-    elif time == 0.0:
-        Zmoving[0, ...] = 0.8660
-    else:
-        Zmoving[0, ...] = 1.0
+    updated_states = epg.transverse_relaxation(states, E2)
 
-    # assertions
-    assert torch.allclose(states["F"], F, atol=1e-4)
-    assert torch.allclose(states["Z"], Z, atol=1e-4)
-    assert torch.allclose(states["moving"]["F"], Fmoving, atol=1e-4)
-    assert torch.allclose(states["moving"]["Z"], Zmoving, atol=1e-4)
+    # Expected results
+    expected_Fplus = torch.tensor([1.0, 0.5]) * E2
+    expected_Fminus = torch.tensor([0.8, 0.4]) * E2
+
+    assert torch.allclose(updated_states.Fplus, expected_Fplus, atol=1e-6)
+    assert torch.allclose(updated_states.Fminus, expected_Fminus, atol=1e-6)
+
+
+def test_transverse_relaxation_exchange():
+    Fplus = torch.tensor([1.0, 0.5])[None, ...]
+    Fminus = torch.tensor([0.8, 0.4])[None, ...]
+    states = SimpleNamespace(Fplus=Fplus.clone(), Fminus=Fminus.clone())
+    E2 = torch.tensor([[0.8, 0.1], [0.2, 0.9]])
+
+    updated_states = epg.transverse_relaxation_exchange(states, E2)
+
+    # Expected results
+    expected_Fplus = torch.einsum("...ij,...j->...i", E2, Fplus.clone())
+    expected_Fminus = torch.einsum("...ij,...j->...i", E2.conj(), Fminus.clone())
+
+    assert torch.allclose(updated_states.Fplus, expected_Fplus, atol=1e-6)
+    assert torch.allclose(updated_states.Fminus, expected_Fminus, atol=1e-6)
+
+
+def test_transverse_edge_cases():
+    # Test with zero R2
+    R2_zero = torch.tensor(0.0)
+    time = torch.tensor(1.0)
+    E2 = epg.transverse_relaxation_op(R2_zero, time)
+
+    assert torch.allclose(E2, torch.tensor(1.0), atol=1e-6)
+
+    # Test with zero time
+    R2 = torch.tensor(0.5)
+    time_zero = torch.tensor(0.0)
+    E2 = epg.transverse_relaxation_op(R2, time_zero)
+
+    assert torch.allclose(E2, torch.tensor(1.0), atol=1e-6)
+
+    # Test with large time (approaching steady-state)
+    large_time = torch.tensor(1e6)
+    E2 = epg.transverse_relaxation_op(R2, large_time)
+
+    assert torch.allclose(E2, torch.tensor(0.0), atol=1e-6)
+
+    # Test with zero exchange rate and frequency offset
+    k = torch.zeros((2, 2))
+    df = torch.zeros(2)
+    time = torch.tensor(2.0)
+    R2 = torch.tensor([0.5, 1.0])
+
+    E2 = epg.transverse_relaxation_exchange_op(k, R2, time, df)
+    expected_E2 = torch.diag(torch.exp(-R2 * time)).to(torch.complex64)
+
+    assert torch.allclose(E2, expected_E2, atol=1e-6)
+
+
+def test_dtype_and_shapes():
+    # Validate data types and shapes
+    R2 = torch.tensor([0.5, 1.0])
+    time = torch.tensor(2.0)
+    k = torch.zeros((2, 2))
+    df = torch.tensor([10.0, 20.0])
+
+    E2 = epg.transverse_relaxation_exchange_op(k, R2, time, df)
+
+    assert E2.dtype == torch.complex64
+    assert E2.shape == k.shape
