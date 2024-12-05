@@ -5,13 +5,10 @@ TorchSim is a pure Pytorch-based MR simulator, including analytical and EPG mode
 
 |Coverage| |CI| |CD| |License| |Codefactor| |Sphinx| |PyPi| |Black| |PythonVersion|
 
-.. |Coverage| image:: https://infn-mri.github.io/torchsim/_static/coverage_badge.svg
-   :target: https://infn-mri.github.io/torchsim
+.. |Coverage| image:: https://codecov.io/gh/INFN-MRI/torchsim/graph/badge.svg?token=qtB53xANwI 
+   :target: https://codecov.io/gh/INFN-MRI/torchsim
 
-.. |CI| image:: https://github.com/INFN-MRI/torchsim/workflows/CI/badge.svg
-   :target: https://github.com/INFN-MRI/torchsim
-
-.. |CD| image:: https://github.com/INFN-MRI/torchsim/workflows/CD/badge.svg
+.. |CI/CD| image:: https://github.com/INFN-MRI/torchsim/workflows/CI-CD/badge.svg
    :target: https://github.com/INFN-MRI/torchsim
 
 .. |License| image:: https://img.shields.io/github/license/INFN-MRI/torchsim
