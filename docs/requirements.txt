@@ -1,6 +1,5 @@
 coverage
 sphinx-book-theme
 sphinx-copybutton
-sphinx-
 sphinx-exec-directive
 matplotlib
