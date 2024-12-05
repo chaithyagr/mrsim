@@ -42,7 +42,7 @@ except:
         modalities=("PD", "T1", "T2"),
         download=True,
     )
-    
+
 # get subject 0
 sample_subject = ixi_dataset[0]
 
