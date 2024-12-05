@@ -45,7 +45,7 @@ class ColabLinkDirective(SphinxDirective):
         )
 
         # Generate the Colab URL based on GitHub repo information
-        self.colab_url = f"https://colab.research.google.com/github/mind-inria/mri-nufft/blob/gh-pages/examples/{notebook_repo_relative_path}"
+        self.colab_url = f"https://colab.research.google.com/github/INFN-MRI/torchsim/blob/gh-pages/examples/{notebook_repo_relative_path}"
 
         # Create the HTML button or link
         self.html = f"""<div class="colab-button">
@@ -96,7 +96,7 @@ class ColabLinkDirective(SphinxDirective):
             )
             message_class = "warning"
             message = (
-                "Running this mri-nufft example requires a GPU, and hence is NOT "
+                "Running this torchsim example requires a GPU, and hence is NOT "
                 "possible on binder currently We request you to kindly run this notebook "
                 "on Google Colab by clicking the link below. Additionally, please make "
                 "sure to set the runtime on Colab to use a GPU and install the below "
