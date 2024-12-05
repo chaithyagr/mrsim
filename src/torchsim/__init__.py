@@ -1,4 +1,4 @@
-"""Main MRSim API."""
+"""Main TorchSim API."""
 
 __all__ = []
 

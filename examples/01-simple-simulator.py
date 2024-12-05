@@ -3,7 +3,7 @@
 Custom Simulator
 ================
 
-This example shows how to use MRSim to implement a simulator.
+This example shows how to use TorchSim to implement a simulator.
 
 
 First, we want to implement the simulation engine.
@@ -17,7 +17,7 @@ simulation.
 # .. colab-link::
 #    :needs_gpu: 0
 #
-#    !pip install mrsim
+#    !pip install torchsim
 
 # %%
 #
@@ -30,8 +30,8 @@ warnings.filterwarnings("ignore")
 import numpy as np
 import torch
 
-from mrsim import base
-from mrsim import epg
+from torchsim import base
+from torchsim import epg
 
 # %%
 #

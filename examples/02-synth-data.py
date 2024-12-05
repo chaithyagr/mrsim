@@ -3,7 +3,7 @@
 Synthetic Data Generation
 =========================
 
-This example shows how to use MRSim to generate synthetic data.
+This example shows how to use TorchSim to generate synthetic data.
 
 We will use torchio and sigpy to get realistic ground truth maps and
 coil sensitivities. These can be installed as:
@@ -17,7 +17,7 @@ coil sensitivities. These can be installed as:
 # .. colab-link::
 #    :needs_gpu: 0
 #
-#    !pip install mrsim torchio sigpy
+#    !pip install torchsim torchio sigpy
 
 # %%
 #
@@ -67,15 +67,15 @@ T2 = np.flip(T2)
 #
 # Now, we can create our simulation function
 #
-# Let's use mrsim fse simulator
+# Let's use torchsim fse simulator
 #
-import mrsim
+import torchsim
 
 
 def simulate(T2, flip, ESP, device="cpu"):
     # get ishape
     ishape = T2.shape
-    output = mrsim.fse_sim(
+    output = torchsim.fse_sim(
         flip=flip, ESP=ESP, T1=1000.0, T2=T2.flatten(), device=device
     )
 

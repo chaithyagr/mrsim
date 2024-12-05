@@ -3,12 +3,12 @@
 import torch
 from torch.testing import assert_close
 
-from mrsim.base.config.relax_model import build_two_pool_exchange_matrix
-from mrsim.base.config.relax_model import build_three_pool_exchange_matrix
-from mrsim.base import prepare_single_pool
-from mrsim.base import prepare_two_pool_bm
-from mrsim.base import prepare_two_pool_mt
-from mrsim.base import prepare_three_pool
+from torchsim.base.config.relax_model import build_two_pool_exchange_matrix
+from torchsim.base.config.relax_model import build_three_pool_exchange_matrix
+from torchsim.base import prepare_single_pool
+from torchsim.base import prepare_two_pool_bm
+from torchsim.base import prepare_two_pool_mt
+from torchsim.base import prepare_three_pool
 
 EPSILON = 1e-6
 

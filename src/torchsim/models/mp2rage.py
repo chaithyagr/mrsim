@@ -36,7 +36,7 @@ class MP2RAGEModel(AbstractModel):
     --------
     .. exec::
 
-        from mrsim.models import MP2RAGEModel
+        from torchsim.models import MP2RAGEModel
 
         model = MP2RAGEModel()
         model.set_properties(T1=(200, 1000), inv_efficiency=0.95)

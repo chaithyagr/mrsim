@@ -224,7 +224,7 @@ def initialize_mt_sat(
         :context: true
 
         import torch
-        from mrsim.epg import initialize_mt_sat, mt_sat_op
+        from torchsim.epg import initialize_mt_sat, mt_sat_op
 
     Constant flip angle case. We will use a pulse duration of 1ms
     and define B1rms so that the b1rms * tau is 32.7 uT**2 * ms.
@@ -552,7 +552,7 @@ def super_lorentzian_lineshape(
 
     Example
     -------
-    >>> from mrsim.epg._utils import super_lorentzian_lineshape
+    >>> from torchsim.epg._utils import super_lorentzian_lineshape
     >>> G = super_lorentzian_lineshape(0.5e3, 12e-6)
 
     Shaihan Malik (c), King's College London, April 2019

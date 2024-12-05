@@ -1,6 +1,6 @@
 """MPnRAGE tests."""
 
-from mrsim import mpnrage_sim
+from torchsim import mpnrage_sim
 
 
 def test_scalar_forward():

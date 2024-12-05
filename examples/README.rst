@@ -3,4 +3,4 @@
 Examples
 ========
 
-This is a collection of examples showing how to use mrsim to create MR simulators for different applications.
+This is a collection of examples showing how to use TorchSim to create MR simulators for different applications.

@@ -5,7 +5,7 @@ import pytest
 import torch
 from types import SimpleNamespace
 
-from mrsim import epg
+from torchsim import epg
 
 
 @pytest.fixture

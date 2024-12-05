@@ -4,7 +4,7 @@ import pytest
 import torch
 from types import SimpleNamespace
 
-from mrsim.epg import get_signal, get_demodulated_signal
+from torchsim.epg import get_signal, get_demodulated_signal
 
 
 @pytest.fixture

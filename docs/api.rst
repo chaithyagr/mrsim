@@ -9,8 +9,8 @@ Base classes and routines for MR simulator implementation.
    :toctree: generated
    :nosignatures:
 
-   mrsim.base.AbstractModel
-   mrsim.base.autocast
+   torchsim.base.AbstractModel
+   torchsim.base.autocast
    
 Parameter configuration
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -19,11 +19,11 @@ Parameter configuration
    :toctree: generated
    :nosignatures:
    
-   mrsim.base.prepare_environmental_parameters
-   mrsim.base.prepare_single_pool
-   mrsim.base.prepare_two_pool_bm
-   mrsim.base.prepare_two_pool_mt
-   mrsim.base.prepare_three_pool
+   torchsim.base.prepare_environmental_parameters
+   torchsim.base.prepare_single_pool
+   torchsim.base.prepare_two_pool_bm
+   torchsim.base.prepare_two_pool_mt
+   torchsim.base.prepare_three_pool
 
 Extended Phase Graphs
 ---------------------
@@ -33,9 +33,9 @@ Subroutines for Extended Phase Graphs based simulators.
    :toctree: generated
    :nosignatures:
 
-   mrsim.epg.states_matrix
-   mrsim.epg.get_signal
-   mrsim.epg.get_demodulated_signal
+   torchsim.epg.states_matrix
+   torchsim.epg.get_signal
+   torchsim.epg.get_demodulated_signal
 
 RF Pulses
 ~~~~~~~~~
@@ -44,16 +44,16 @@ RF Pulses
    :toctree: generated
    :nosignatures:
 
-   mrsim.epg.rf_pulse_op
-   mrsim.epg.phased_rf_pulse_op
-   mrsim.epg.multidrive_rf_pulse_op
-   mrsim.epg.phased_multidrive_rf_pulse_op
-   mrsim.epg.rf_pulse
+   torchsim.epg.rf_pulse_op
+   torchsim.epg.phased_rf_pulse_op
+   torchsim.epg.multidrive_rf_pulse_op
+   torchsim.epg.phased_multidrive_rf_pulse_op
+   torchsim.epg.rf_pulse
    
-   mrsim.epg.initialize_mt_sat
-   mrsim.epg.mt_sat_op
-   mrsim.epg.multidrive_mt_sat_op
-   mrsim.epg.mt_sat
+   torchsim.epg.initialize_mt_sat
+   torchsim.epg.mt_sat_op
+   torchsim.epg.multidrive_mt_sat_op
+   torchsim.epg.mt_sat
     
 Relaxation and Exchange
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -62,14 +62,14 @@ Relaxation and Exchange
    :toctree: generated
    :nosignatures:
 
-   mrsim.epg.longitudinal_relaxation_op
-   mrsim.epg.longitudinal_relaxation
-   mrsim.epg.longitudinal_relaxation_exchange_op
-   mrsim.epg.longitudinal_relaxation_exchange
-   mrsim.epg.transverse_relaxation_op
-   mrsim.epg.transverse_relaxation
-   mrsim.epg.transverse_relaxation_exchange_op
-   mrsim.epg.transverse_relaxation_exchange
+   torchsim.epg.longitudinal_relaxation_op
+   torchsim.epg.longitudinal_relaxation
+   torchsim.epg.longitudinal_relaxation_exchange_op
+   torchsim.epg.longitudinal_relaxation_exchange
+   torchsim.epg.transverse_relaxation_op
+   torchsim.epg.transverse_relaxation
+   torchsim.epg.transverse_relaxation_exchange_op
+   torchsim.epg.transverse_relaxation_exchange
    
 Gradient Dephasing
 ~~~~~~~~~~~~~~~~~~
@@ -78,8 +78,8 @@ Gradient Dephasing
    :toctree: generated
    :nosignatures:
 
-   mrsim.epg.shift
-   mrsim.epg.spoil  
+   torchsim.epg.shift
+   torchsim.epg.spoil  
    
 Magnetization Prep
 ~~~~~~~~~~~~~~~~~~
@@ -88,7 +88,7 @@ Magnetization Prep
    :toctree: generated
    :nosignatures:
    
-    mrsim.epg.adiabatic_inversion   
+    torchsim.epg.adiabatic_inversion   
    
 Flow and Diffusion
 ~~~~~~~~~~~~~~~~~~
@@ -97,10 +97,10 @@ Flow and Diffusion
    :toctree: generated
    :nosignatures:
 
-   mrsim.epg.diffusion_op
-   mrsim.epg.diffusion
-   mrsim.epg.flow_op
-   mrsim.epg.flow   
+   torchsim.epg.diffusion_op
+   torchsim.epg.diffusion
+   torchsim.epg.flow_op
+   torchsim.epg.flow   
    
 Signal Models
 -------------
@@ -113,8 +113,8 @@ Analytical
    :toctree: generated
    :nosignatures:  
    
-   mrsim.models.bSSFPModel
-   mrsim.models.SPGRModel
+   torchsim.models.bSSFPModel
+   torchsim.models.SPGRModel
    
 Iterative
 ~~~~~~~~~
@@ -123,10 +123,10 @@ Iterative
    :toctree: generated
    :nosignatures:  
    
-   mrsim.models.FSEModel
-   mrsim.models.MP2RAGEModel
-   mrsim.models.MPnRAGEModel
-   mrsim.models.MRFModel
+   torchsim.models.FSEModel
+   torchsim.models.MP2RAGEModel
+   torchsim.models.MPnRAGEModel
+   torchsim.models.MRFModel
    
 Functional
 ----------
@@ -139,8 +139,8 @@ Analytical
    :toctree: generated
    :nosignatures:  
    
-   mrsim.bssfp_sim
-   mrsim.spgr_sim
+   torchsim.bssfp_sim
+   torchsim.spgr_sim
     
 Iterative
 ~~~~~~~~~
@@ -149,10 +149,10 @@ Iterative
    :toctree: generated
    :nosignatures:  
    
-   mrsim.fse_sim
-   mrsim.mp2rage_sim
-   mrsim.mpnrage_sim
-   mrsim.mrf_sim
+   torchsim.fse_sim
+   torchsim.mp2rage_sim
+   torchsim.mpnrage_sim
+   torchsim.mrf_sim
     
 Miscellaneous
 -------------
@@ -162,7 +162,7 @@ Other simulation utilities.
    :toctree: generated
    :nosignatures:
 
-   mrsim.utils.b1rms
-   mrsim.utils.slice_prof
+   torchsim.utils.b1rms
+   torchsim.utils.slice_prof
 
 

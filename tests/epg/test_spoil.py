@@ -4,7 +4,7 @@ import pytest
 import torch
 from types import SimpleNamespace
 
-from mrsim.epg import spoil
+from torchsim.epg import spoil
 
 
 @pytest.fixture

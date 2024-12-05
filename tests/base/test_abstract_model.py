@@ -2,7 +2,7 @@
 
 import torch
 
-from mrsim.base import AbstractModel  # Update with actual path
+from torchsim.base import AbstractModel  # Update with actual path
 
 
 # Mock subclass of AbstractModel for testing purposes

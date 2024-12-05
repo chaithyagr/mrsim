@@ -38,7 +38,7 @@ class FSEModel(AbstractModel):
     .. exec::
 
         import torch
-        from mrsim.models import FSEModel
+        from torchsim.models import FSEModel
 
         model = FSEModel()
         model.set_properties(T1=1000, T2=80, M0=1.0, B1=1.0)

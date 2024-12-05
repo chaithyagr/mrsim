@@ -1,10 +1,9 @@
 """Test environmental parameters pre-processing."""
 
-import pytest
 import torch
 from torch.testing import assert_close
 
-from mrsim.base import prepare_environmental_parameters
+from torchsim.base import prepare_environmental_parameters
 
 EPSILON = 1e-6
 

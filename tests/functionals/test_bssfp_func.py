@@ -3,7 +3,7 @@
 from pytest import fixture
 
 import numpy as np
-from mrsim import bssfp_sim
+from torchsim import bssfp_sim
 
 
 @fixture

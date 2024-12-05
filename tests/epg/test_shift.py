@@ -4,7 +4,7 @@ import pytest
 import torch
 from types import SimpleNamespace
 
-from mrsim.epg import shift
+from torchsim.epg import shift
 
 
 @pytest.fixture

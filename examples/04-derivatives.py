@@ -12,7 +12,7 @@ of the framework.
 # .. colab-link::
 #    :needs_gpu: 0
 #
-#    !pip install mrsim
+#    !pip install torchsim
 
 # %%
 #
@@ -43,7 +43,7 @@ import time
 # We'll focuse on a simple Fast Spin Echo acquisition:
 #
 
-import mrsim
+import torchsim
 
 # %%
 #
@@ -83,7 +83,7 @@ def calculate_crlb(grad, W=None, weight=1.0):
 def _crlb_cost(ESP, T1, T2, flip):
 
     # calculate signal and derivative
-    _, grad = mrsim.fse_sim(flip=flip, ESP=ESP, T1=T1, T2=T2, diff="T2")
+    _, grad = torchsim.fse_sim(flip=flip, ESP=ESP, T1=T1, T2=T2, diff="T2")
 
     # calculate cost
     return calculate_crlb(grad)
@@ -109,11 +109,11 @@ def crlb_cost(flip, ESP, T1, T2):
 
 
 def fse_finitediff_grad(flip, ESP, T1, T2):
-    sig = mrsim.fse_sim(flip=flip, ESP=ESP, T1=T1, T2=T2)
+    sig = torchsim.fse_sim(flip=flip, ESP=ESP, T1=T1, T2=T2)
 
     # numerical derivative
     dt = 1.0
-    dsig = mrsim.fse_sim(flip=flip, ESP=ESP, T1=T1, T2=T2 + dt)
+    dsig = torchsim.fse_sim(flip=flip, ESP=ESP, T1=T1, T2=T2 + dt)
 
     return sig, (dsig - sig) / dt
 
@@ -169,7 +169,7 @@ tstop = time.time()
 tgrad0 = tstop - tstart
 
 tstart = time.time()
-sig, grad = mrsim.fse_sim(flip=angles, ESP=esp, T1=t1, T2=t2, diff="T2")
+sig, grad = torchsim.fse_sim(flip=angles, ESP=esp, T1=t1, T2=t2, diff="T2")
 tstop = time.time()
 tgrad = tstop - tstart
 

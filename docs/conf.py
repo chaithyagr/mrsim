@@ -21,9 +21,9 @@ sys.path.insert(0, os.path.abspath("../.."))  # Source code dir relative to this
 
 # -- Project information -----------------------------------------------------
 
-project = "mrsim"
-copyright = "2024, MRSim Contributors"
-author = "MRSim Contributors"
+project = "torchsim"
+copyright = "2024, TorchSim Contributors"
+author = "TorchSim Contributors"
 
 # -- General configuration ---------------------------------------------------
 
@@ -73,9 +73,9 @@ highlight_language = "python"
 # -- Options for Sphinx Gallery ----------------------------------------------
 
 sphinx_gallery_conf = {
-    "doc_module": "mrsim",
+    "doc_module": "torchsim",
     "backreferences_dir": "generated/gallery_backreferences",
-    "reference_url": {"mrsim": None},
+    "reference_url": {"torchsim": None},
     "examples_dirs": ["../examples/"],
     "gallery_dirs": ["generated/autoexamples"],
     "filename_pattern": "/0",
@@ -84,7 +84,7 @@ sphinx_gallery_conf = {
     "within_subsection_order": "FileNameSortKey",
     "binder": {
         "org": "infn-mri",
-        "repo": "mrsim",
+        "repo": "torchsim",
         "branch": "gh-pages",
         "binderhub_url": "https://mybinder.org",
         "dependencies": [
@@ -115,7 +115,7 @@ html_theme = "sphinx_book_theme"
 # so a file named "default.css" will overwrite the builtin "default.css".
 # html_static_path = ["_static"]
 html_theme_options = {
-    "repository_url": "https://github.com/INFN-MRI/mrsim",
+    "repository_url": "https://github.com/INFN-MRI/torchsim",
     "use_repository_button": True,
     "use_issues_button": True,
     "use_edit_page_button": True,
@@ -125,4 +125,4 @@ html_theme_options = {
 
 # html_logo = "_static/logos/mri-nufft.png"
 # html_favicon = "_static/logos/mri-nufft-icon.png"
-html_title = "MRSim Documentation"
+html_title = "TorchSim Documentation"

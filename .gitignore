@@ -22,4 +22,4 @@ tmp/
 docs/generated/
 docs_build/
 
-src/mrsim/_version.py
+src/torchsim/_version.py

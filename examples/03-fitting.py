@@ -3,7 +3,7 @@
 Parameter Fitting
 =================
 
-This example shows how to use MRSim to perform parameter inference.
+This example shows how to use TorchSim to perform parameter inference.
 
 We will build on the previous example. We will use ``numba``, which can 
 be installed as ``pip install numba``
@@ -14,7 +14,7 @@ be installed as ``pip install numba``
 # .. colab-link::
 #    :needs_gpu: 0
 #
-#    !pip install mrsim torchio sigpy
+#    !pip install torchsim torchio sigpy
 
 # %%
 #
@@ -27,7 +27,7 @@ warnings.filterwarnings("ignore")
 
 import numpy as np
 import torchio as tio
-import mrsim
+import torchsim
 
 
 ixi_dataset = tio.datasets.IXI(
@@ -56,7 +56,7 @@ T2 = np.flip(T2)
 def simulate(T2, flip, ESP, device="cpu"):
     # get ishape
     ishape = T2.shape
-    output = mrsim.fse_sim(
+    output = torchsim.fse_sim(
         flip=flip, ESP=ESP, T1=1000.0, T2=T2.flatten(), device=device
     )
 
@@ -218,7 +218,7 @@ def fse_fit(input, t2grid, flip, ESP, phases=None):
     t1 = 1000.0
 
     # build dictionary
-    atoms = mrsim.fse_sim(flip=flip, phases=phases, ESP=ESP, T1=t1, T2=t2lut).numpy(
+    atoms = torchsim.fse_sim(flip=flip, phases=phases, ESP=ESP, T1=t1, T2=t2lut).numpy(
         force=True
     )
     blochdict = BlochDictionary(abs(atoms), t2lut[:, None], ["T2"])

@@ -4,7 +4,7 @@ requires = ["setuptools", "setuptools_scm[toml]", "wheel"]
 
 
 [project]
-name = "mrsim"
+name = "torchsim"
 description = "A feature-rich MR simulator supporting massive parallelization on GPU and automatic differentiation."
 readme = "README.rst"
 
@@ -65,15 +65,15 @@ doc = [
 # List URLs that are relevant to your project
 # This field corresponds to the "Project-URL" and "Home-Page" metadata fields:
 [project.urls]  # Optional
-"Homepage" = "https://github.com/INFN-MRI/mrsim"
-"Bug Reports" = "https://github.com/INFN-MRI/mrsim/issues"
-"Source" = "https://github.com/INFN-MRI/mrsim"
+"Homepage" = "https://github.com/INFN-MRI/torchsim"
+"Bug Reports" = "https://github.com/INFN-MRI/torchsim/issues"
+"Source" = "https://github.com/INFN-MRI/torchsim"
 
 [tool.setuptools.packages.find]
 where=["src"]
 
 [tool.setuptools_scm]
-write_to = "src/mrsim/_version.py"
+write_to = "src/torchsim/_version.py"
 version_scheme = "python-simplified-semver"
 local_scheme="no-local-version"
 fallback_version="v99-dev"

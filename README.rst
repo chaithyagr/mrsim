@@ -1,30 +1,30 @@
-MRSim
-=====
+TorchSim
+========
 
-MRSim is a pure Pytorch-based MR simulator, including analytical and EPG model.
+TorchSim is a pure Pytorch-based MR simulator, including analytical and EPG model.
 
 |Coverage| |CI| |CD| |License| |Codefactor| |Sphinx| |PyPi| |Black| |PythonVersion|
 
-.. |Coverage| image:: https://infn-mri.github.io/mrsim/_static/coverage_badge.svg
-   :target: https://infn-mri.github.io/mrsim
+.. |Coverage| image:: https://infn-mri.github.io/torchsim/_static/coverage_badge.svg
+   :target: https://infn-mri.github.io/torchsim
 
-.. |CI| image:: https://github.com/INFN-MRI/mrsim/workflows/CI/badge.svg
-   :target: https://github.com/INFN-MRI/mrsim
+.. |CI| image:: https://github.com/INFN-MRI/torchsim/workflows/CI/badge.svg
+   :target: https://github.com/INFN-MRI/torchsim
 
-.. |CD| image:: https://github.com/INFN-MRI/mrsim/workflows/CD/badge.svg
-   :target: https://github.com/INFN-MRI/mrsim
+.. |CD| image:: https://github.com/INFN-MRI/torchsim/workflows/CD/badge.svg
+   :target: https://github.com/INFN-MRI/torchsim
 
-.. |License| image:: https://img.shields.io/github/license/INFN-MRI/mrsim
-   :target: https://github.com/INFN-MRI/mrsim/blob/main/LICENSE.txt
+.. |License| image:: https://img.shields.io/github/license/INFN-MRI/torchsim
+   :target: https://github.com/INFN-MRI/torchsim/blob/main/LICENSE.txt
 
-.. |Codefactor| image:: https://www.codefactor.io/repository/github/INFN-MRI/mrsim/badge
-   :target: https://www.codefactor.io/repository/github/INFN-MRI/mrsim
+.. |Codefactor| image:: https://www.codefactor.io/repository/github/INFN-MRI/torchsim/badge
+   :target: https://www.codefactor.io/repository/github/INFN-MRI/torchsim
 
 .. |Sphinx| image:: https://img.shields.io/badge/docs-Sphinx-blue
-   :target: https://infn-mri.github.io/mrsim
+   :target: https://infn-mri.github.io/torchsim
 
-.. |PyPi| image:: https://img.shields.io/pypi/v/mrsim
-   :target: https://pypi.org/project/mrsim
+.. |PyPi| image:: https://img.shields.io/pypi/v/torchsim
+   :target: https://pypi.org/project/torchsim
 
 .. |Black| image:: https://img.shields.io/badge/style-black-black
 
@@ -33,7 +33,7 @@ MRSim is a pure Pytorch-based MR simulator, including analytical and EPG model.
 
 Features
 --------
-MRSim contains tools to implement parallelized and differentiable MR simulators. Specifically, we provide
+TorchSim contains tools to implement parallelized and differentiable MR simulators. Specifically, we provide
 
 1. Automatic vectorization of across multiple atoms (e.g., voxels).
 2. Automatic generation of forward and jacobian methods (based on forward-mode autodiff) to be used in parameter fitting or model-based reconstructions.
@@ -44,24 +44,39 @@ MRSim contains tools to implement parallelized and differentiable MR simulators.
 Installation
 ------------
 
-MRSim can be installed via pip as:
+TorchSim can be installed via pip as:
 
 .. code-block:: bash
 
-    pip install mrsim
+    pip install torchsim
 
 Basic Usage
 -----------
+Using TorchSim, we can quickly implement and run MR simulations.
+We also provide pre-defined simulators for several applications:
+
+.. code-block:: python
+    
+    import numpy as np
+    import torchsim
+    
+    # generate a flip angle pattern
+    flip = np.concatenate((np.linspace(5, 60.0, 300), np.linspace(60.0, 2.0, 300), np.ones(280)*2.0))
+    sig, jac = torchsim.mrf_sim(flip=flip, TR=10.0, T1=1000.0, T2=100.0, diff=("T1","T2"))
+    
+This way we obtained the forward pass signal (``sig``) as well as the jacobian
+calculated with respect to ``T1`` and ``T2``.
+
 
 Development
-~~~~~~~~~~~
+-----------
 
-If you are interested in improving this project, install MRSim in editable mode:
+If you are interested in improving this project, install TorchSim in editable mode:
 
 .. code-block:: bash
 
-    git clone git@github.com:INFN-MRI/mrsim
-    cd mrsim
+    git clone git@github.com:INFN-MRI/torchsim
+    cd torchsim
     pip install -e .[dev,test,doc]
 
 

@@ -33,7 +33,7 @@ class SPGRModel(AbstractModel):
     --------
     .. exec::
 
-        from mrsim.models import SPGRModel
+        from torchsim.models import SPGRModel
 
         model = SPGRModel()
         model.set_properties(T1=1000, T2star=30)

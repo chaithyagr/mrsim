@@ -3,7 +3,7 @@
 import torch
 from types import SimpleNamespace
 
-from mrsim.epg import states_matrix
+from torchsim.epg import states_matrix
 
 
 def test_states_matrix_default():

@@ -3,7 +3,7 @@
 from pytest import fixture
 
 import numpy as np
-from mrsim import spgr_sim
+from torchsim import spgr_sim
 
 
 @fixture

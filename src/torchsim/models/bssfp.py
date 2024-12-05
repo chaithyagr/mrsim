@@ -33,7 +33,7 @@ class bSSFPModel(AbstractModel):
     --------
     .. exec::
 
-        from mrsim.models import bSSFPModel
+        from torchsim.models import bSSFPModel
 
         model = bSSFPModel()
         model.set_properties(T1=1000, T2=100)
