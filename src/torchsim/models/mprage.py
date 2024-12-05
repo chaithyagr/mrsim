@@ -140,16 +140,16 @@ class MPRAGEModel(AbstractModel):
         states = epg.adiabatic_inversion(states, inv_efficiency)
         states = epg.longitudinal_relaxation(states, E1inv, rE1inv)
         states = epg.spoil(states)
-
+        signal = []
         # Scan loop
         for p in range(nshots_bef):
 
             # Apply RF pulse
             states = epg.rf_pulse(states, RF)
-
             # Evolve
             states = epg.longitudinal_relaxation(states, E1, rE1)
+            signal.append(M0 * 1j * epg.get_signal(states))
             states = epg.spoil(states)
 
         # Record signal
-        return M0 * 1j * epg.get_signal(states)
+        return torch.stack(signal)
