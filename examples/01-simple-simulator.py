@@ -154,6 +154,8 @@ model.set_sequence(flip=flip, TR=10.0)
 # by overriding the ``_engine`` method. This must be decorated as a ``static_method`` and contain each and exclusively the
 # parameters defined in ``set_properties`` and ``set_sequence`` signature.
 #
+# For consistent derivative scaling, all unit conversions must be performed in the body of this function.
+#
 # The user should implement the simulation as it were acting on a single atom (e.g., a single combination of ``properties`` parameters).
 # The base class will ensure that all ``properties`` are broadcasted and computation vectorized over batches of size ``chunk_size``.
 #

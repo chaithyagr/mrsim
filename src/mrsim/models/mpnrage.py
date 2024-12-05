@@ -36,9 +36,9 @@ class MPnRAGEModel(AbstractModel):
     --------
     .. exec::
 
-        from mrsim.models import MPnRAGE
+        from mrsim.models import MPnRAGEModel
 
-        model = MPnRAGE()
+        model = MPnRAGEModel()
         model.set_properties(T1=1000, inv_efficiency=0.95)
         model.set_sequence(nshots=128, flip=5.0, TR=10.0)
         signal = model()
@@ -158,4 +158,4 @@ class MPnRAGEModel(AbstractModel):
             states = epg.longitudinal_relaxation(states, E1, rE1)
             states = epg.spoil(states)
 
-        return M0 * torch.stack(signal)
+        return M0 * 1j * torch.stack(signal)

@@ -36,11 +36,11 @@ class MP2RAGEModel(AbstractModel):
     --------
     .. exec::
 
-        from mrsim.models import MP2RAGE
+        from mrsim.models import MP2RAGEModel
 
-        model = MP2RAGE()
+        model = MP2RAGEModel()
         model.set_properties(T1=(200, 1000), inv_efficiency=0.95)
-        model.set_sequence(nshots=128, flip=5.0, TRspgr=5.0, TRmp2rage=3000.0)
+        model.set_sequence(TI=(500.0, 1500.0), flip=5.0, TRspgr=5.0, TRmp2rage=3000.0, nshots=128)
         signal = model()
 
     """

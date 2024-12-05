@@ -1,7 +1,7 @@
 MRSim
 =====
 
-MRSim is a Pytorch-based MR simulator, including analitical and EPG model.
+MRSim is a pure Pytorch-based MR simulator, including analytical and EPG model.
 
 |Coverage| |CI| |CD| |License| |Codefactor| |Sphinx| |PyPi| |Black| |PythonVersion|
 
@@ -33,7 +33,13 @@ MRSim is a Pytorch-based MR simulator, including analitical and EPG model.
 
 Features
 --------
+MRSim contains tools to implement parallelized and differentiable MR simulators. Specifically, we provide
 
+1. Automatic vectorization of across multiple atoms (e.g., voxels).
+2. Automatic generation of forward and jacobian methods (based on forward-mode autodiff) to be used in parameter fitting or model-based reconstructions.
+3. Support for custom manual defined jacobian methods to override auto-generated jacobian.
+4. Support for advanced signal models, including diffusion, flow, magnetization transfer and chemical exchange.
+5. GPU support.
 
 Installation
 ------------

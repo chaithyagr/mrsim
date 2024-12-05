@@ -222,6 +222,8 @@ def initialize_mt_sat(
     --------
     .. exec::
         :context: true
+
+        import torch
         from mrsim.epg import initialize_mt_sat, mt_sat_op
 
     Constant flip angle case. We will use a pulse duration of 1ms
@@ -229,6 +231,7 @@ def initialize_mt_sat(
 
     .. exec::
         :context: true
+
         duration = 1e-3 # 1ms pulse duration
         b1rms = 1e-6 * (32.7**0.5) / 1e-3 # B1 rms in [T]
         df = 0.0 # assume on-resonance pulse
@@ -237,6 +240,7 @@ def initialize_mt_sat(
 
     .. exec::
         :context: true
+
         WT = initialize_mt_sat(torch.as_tensor(duration), torch.as_tensor(b1rms), df, slice_prof=1.0, B1=1.0)
         S = mt_sat_op(WT)
 
@@ -245,6 +249,7 @@ def initialize_mt_sat(
 
     .. exec::
         :context: true
+
         duration = 1e-3 # 1ms pulse duration
         b1rms = 1e-6 * (54.3**0.5) / 1e-3 # B1 rms in [T]
         df = 0.0 # assume on-resonance pulse
@@ -253,6 +258,7 @@ def initialize_mt_sat(
 
     .. exec::
         :context: true
+
         WT = initialize_mt_sat(torch.as_tensor(duration), torch.as_tensor(b1rms), df)
 
     Then, for each RF pulse of in the train, we rescale ``WT`` and recompute
@@ -260,9 +266,10 @@ def initialize_mt_sat(
 
     .. exec::
         :context: true
+
         fa = torch.linspace(5, 60.0, 1000)
         fa = torch.deg2rad(fa)
-        for n in fa.shape[0]:
+        for n in range(fa.shape[0]):
             # update saturation operator
             S = mt_sat_op(WT, fa[n], slice_prof=1.0, B1=1.0)
 
