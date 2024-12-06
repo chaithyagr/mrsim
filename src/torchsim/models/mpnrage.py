@@ -112,6 +112,8 @@ class MPnRAGEModel(AbstractModel):
         self.sequence.TR = TR * 1e-3  # ms -> s
         self.sequence.TI = TI * 1e-3  # ms -> s
         self.sequence.slice_prof = slice_prof
+        self.sequence.num_inversions = num_inversions
+        self.sequence.MPRAGE_TR = MPRAGE_TR * 1e-3 if MPRAGE_TR is not None else None
 
     @staticmethod
     def _engine(
